@@ -670,7 +670,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
       {/* Custom Exercise Dialog */}
       <Dialog open={showCustom} onOpenChange={setShowCustom}>
-        <DialogContent className="max-w-sm w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl">
+        <DialogContent showCloseButton={false} className="max-w-sm w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl">
           <div className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
