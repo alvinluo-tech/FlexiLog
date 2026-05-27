@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar, BottomNav } from "@/components/navigation";
+import { PWARegister } from "@/components/pwa-register";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -47,7 +48,11 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased">
+        <PWARegister />
         <Sidebar />
         <main className="flex-1 md:ml-60 pb-20 md:pb-0">
           {children}

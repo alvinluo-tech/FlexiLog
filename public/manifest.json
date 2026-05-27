@@ -1,22 +1,29 @@
 {
   "name": "FlexiLog - AI 健身记录",
   "short_name": "FlexiLog",
-  "description": "集传统健身记录与AI智能教练于一体的Web应用",
-  "start_url": "/dashboard",
+  "description": "AI-powered fitness tracking app",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0a0b",
+  "theme_color": "#3b82f6",
   "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "categories": ["health", "fitness"],
+  "lang": "zh-CN",
+  "dir": "ltr"
 }
