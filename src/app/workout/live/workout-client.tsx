@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { 
   Play, Pause, ArrowCounterClockwise, Plus, Trash, 
-  Timer, CaretDown, CaretUp, Check, Barbell, FloppyDisk, CalendarBlank
+  Timer, CaretDown, CaretUp, Check, Barbell, FloppyDisk, CalendarBlank, Lightning
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet } from '@/app/actions/workout'
 import { useRouter } from 'next/navigation'
@@ -41,78 +41,185 @@ interface WorkoutLiveClientProps {
   previousData: Record<string, { weight: string; reps: string }[]>
   userId: string
   templates?: any[]
+  initialSessionId?: string | null
+  initialSessionStartTime?: number | null
+  initialExerciseBlocks?: any[]
 }
 
-export default function WorkoutLiveClient({ exercises, previousData, userId, templates = [] }: WorkoutLiveClientProps) {
+export default function WorkoutLiveClient({ 
+  exercises, 
+  previousData, 
+  userId, 
+  templates = [],
+  initialSessionId = null,
+  initialSessionStartTime = null,
+  initialExerciseBlocks = []
+}: WorkoutLiveClientProps) {
   const router = useRouter()
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [exerciseBlocks, setExerciseBlocks] = useState<ExerciseBlock[]>([])
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId)
+  const [exerciseBlocks, setExerciseBlocks] = useState<ExerciseBlock[]>(initialExerciseBlocks)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [restTime] = useState(90)
   const [timeLeft, setTimeLeft] = useState(0)
   const [showExercisePicker, setShowExercisePicker] = useState(false)
-  const [sessionStartTime] = useState(Date.now())
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(initialSessionStartTime)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [saving, setSaving] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [aiPlan, setAiPlan] = useState<any | null>(null)
 
-  // Start session on mount and load AI plan if exists
+  // Load AI plan from localStorage on mount if exists
   useEffect(() => {
-    async function startSession() {
-      const result = await createWorkoutSession()
-      if (result.data) {
-        setSessionId(result.data.id)
-      }
-    }
-    startSession()
-    
-    // Check for AI plan in localStorage
     const savedPlan = localStorage.getItem('ai_plan')
     if (savedPlan) {
       try {
         const plan = JSON.parse(savedPlan)
-        if (plan.days && plan.days.length > 0) {
-          // Get today's workout (use first day or match by day of week)
-          const today = new Date().getDay()
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-          const todayName = dayNames[today]
-          
-          // Find matching day or use first day
-          const todayPlan = plan.days.find((d: any) => 
-            d.day?.toLowerCase().includes(todayName.toLowerCase())
-          ) || plan.days[0]
-          
-          if (todayPlan?.exercises) {
-            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => ({
-              exercise: {
-                id: 'ai-' + ex.name,
-                name: ex.name,
-                muscle_group: todayPlan.focus || 'general'
-              },
-              sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
-                id: 'set-' + Date.now() + '-' + i,
-                weight: '',
-                reps: '',
-                rpe: '',
-                completed: false,
-                saved: false
-              })),
-              previousData: [],
-              collapsed: false
-            }))
-            setExerciseBlocks(newBlocks)
-          }
-        }
-        // Clear the plan from localStorage after loading
-        localStorage.removeItem('ai_plan')
+        setAiPlan(plan)
       } catch (e) {
         console.error('Failed to load AI plan:', e)
       }
     }
   }, [])
 
+  // Start an empty workout
+  const handleStartEmptyWorkout = async () => {
+    setSaving(true)
+    const result = await createWorkoutSession()
+    if (result.data) {
+      setSessionId(result.data.id)
+      setSessionStartTime(Date.now())
+      setExerciseBlocks([])
+    }
+    setSaving(false)
+  }
+
+  // Start workout from a template
+  const handleStartTemplateWorkout = async (template: any) => {
+    setSaving(true)
+    try {
+      const result = await createWorkoutSession(template.id)
+      if (result.data) {
+        setSessionId(result.data.id)
+        setSessionStartTime(Date.now())
+        
+        const plan = template.exercises
+        if (plan && plan.length > 0) {
+          const today = new Date().getDay()
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+          const todayName = dayNames[today]
+          
+          const todayPlan = plan.find((d: any) => 
+            d.day?.toLowerCase().includes(todayName.toLowerCase())
+          ) || plan[0]
+          
+          if (todayPlan?.exercises) {
+            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => {
+              const baseBlock: ExerciseBlock = {
+                exercise: {
+                  id: 'template-' + ex.name,
+                  name: ex.name,
+                  muscle_group: todayPlan.focus || 'general'
+                },
+                sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
+                  id: 'set-' + Date.now() + '-' + i,
+                  weight: '',
+                  reps: ex.reps || '',
+                  rpe: '',
+                  completed: false,
+                  saved: false
+                })),
+                previousData: [],
+                collapsed: false
+              }
+
+              // Match master exercises list to get a valid database UUID
+              const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
+              if (matched) {
+                baseBlock.exercise.id = matched.id
+                baseBlock.exercise.muscle_group = matched.muscle_group
+                baseBlock.previousData = previousData[matched.id] || []
+              }
+
+              return baseBlock
+            })
+            setExerciseBlocks(newBlocks)
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load template:', e)
+    } finally {
+      setSaving(false)
+      setShowTemplates(false)
+    }
+  }
+
+  // Start workout from Today's AI Coach Plan
+  const handleStartAiWorkout = async () => {
+    if (!aiPlan) return
+    setSaving(true)
+    try {
+      const result = await createWorkoutSession()
+      if (result.data) {
+        setSessionId(result.data.id)
+        setSessionStartTime(Date.now())
+        
+        if (aiPlan.days && aiPlan.days.length > 0) {
+          const today = new Date().getDay()
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+          const todayName = dayNames[today]
+          
+          const todayPlan = aiPlan.days.find((d: any) => 
+            d.day?.toLowerCase().includes(todayName.toLowerCase())
+          ) || aiPlan.days[0]
+          
+          if (todayPlan?.exercises) {
+            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => {
+              const baseBlock: ExerciseBlock = {
+                exercise: {
+                  id: 'ai-' + ex.name,
+                  name: ex.name,
+                  muscle_group: todayPlan.focus || 'general'
+                },
+                sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
+                  id: 'set-' + Date.now() + '-' + i,
+                  weight: '',
+                  reps: '',
+                  rpe: '',
+                  completed: false,
+                  saved: false
+                })),
+                previousData: [],
+                collapsed: false
+              }
+
+              // Match master exercises list to get a valid database UUID
+              const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
+              if (matched) {
+                baseBlock.exercise.id = matched.id
+                baseBlock.exercise.muscle_group = matched.muscle_group
+                baseBlock.previousData = previousData[matched.id] || []
+              }
+
+              return baseBlock
+            })
+            setExerciseBlocks(newBlocks)
+          }
+        }
+        
+        localStorage.removeItem('ai_plan')
+        setAiPlan(null)
+      }
+    } catch (e) {
+      console.error('Failed to load AI plan:', e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Session timer
   useEffect(() => {
+    if (!sessionStartTime) return
     const timer = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - sessionStartTime) / 1000))
     }, 1000)
@@ -278,6 +385,124 @@ export default function WorkoutLiveClient({ exercises, previousData, userId, tem
     })
     return { completedSets: completed, totalSets: total }
   }, [exerciseBlocks])
+
+  if (sessionStartTime === null) {
+    return (
+      <div className="max-w-md mx-auto p-4 pb-32 space-y-6 w-full min-h-[100dvh] flex flex-col justify-start">
+        {/* Lobby Header */}
+        <div className="text-center pt-8 pb-4">
+          <div className="h-16 w-16 mx-auto rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/60 flex items-center justify-center shadow-lg shadow-blue-500/20 mb-4">
+            <Barbell weight="fill" className="h-9 w-9 text-white animate-pulse" />
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-white">Let's Lift!</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 font-medium">Ready to record today's achievements?</p>
+        </div>
+
+        {/* Start Empty Workout Card */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleStartEmptyWorkout}
+          className="relative overflow-hidden rounded-2xl gradient-accent p-6 shadow-xl border border-white/10 group cursor-pointer"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8 blur-xl transition-transform duration-300 group-hover:scale-110" />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md mb-2">
+                Quick Start
+              </span>
+              <p className="text-white text-xl font-black tracking-tight">START EMPTY WORKOUT</p>
+              <p className="text-white/80 text-[11px] font-medium mt-0.5">Start tracking exercises on a blank canvas</p>
+            </div>
+            <div className="h-11 w-11 rounded-full bg-white text-[var(--accent)] flex items-center justify-center shadow-md">
+              {saving ? (
+                <div className="h-5 w-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play weight="bold" className="h-5 w-5 fill-current ml-0.5" />
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* AI Plan Banner */}
+        {aiPlan && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleStartAiWorkout}
+            className="cursor-pointer border border-purple-500/30 rounded-2xl p-5 bg-gradient-to-br from-purple-500/10 to-transparent hover:border-purple-500/50 transition-all flex items-center justify-between relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="flex items-start gap-3.5">
+              <div className="h-10 w-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                <Lightning weight="fill" className="h-5 w-5 text-purple-400 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold text-purple-300 uppercase tracking-wider leading-none">AI Plan Ready</p>
+                <p className="text-white font-black text-[16px] mt-1">{aiPlan.name || 'AI Training Plan'}</p>
+                <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 font-medium leading-tight">{aiPlan.description || 'Custom plan generated by your AI Coach'}</p>
+              </div>
+            </div>
+            <div className="h-9 w-9 rounded-full bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/20">
+              {saving ? (
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play weight="bold" className="h-4 w-4 fill-current ml-0.5" />
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Saved Templates Section */}
+        <div className="space-y-3 flex-1">
+          <div className="flex items-center gap-1.5 px-1">
+            <CalendarBlank weight="bold" className="h-4 w-4 text-[var(--text-secondary)]" />
+            <h2 className="text-sm font-black uppercase tracking-wider text-[var(--text-secondary)]">Your Templates</h2>
+          </div>
+
+          {templates.length === 0 ? (
+            <div className="border border-dashed border-white/5 bg-[var(--surface-1)] rounded-2xl p-8 text-center text-[var(--text-tertiary)]">
+              <p className="text-sm font-semibold">No saved templates yet</p>
+              <p className="text-[11px] mt-0.5">Create templates inside workouts or AI plans to load them here.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {templates.map(template => (
+                <motion.div
+                  key={template.id}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => handleStartTemplateWorkout(template)}
+                  className="cursor-pointer card-surface bg-[var(--surface-1)] border-[var(--border-default)] rounded-xl p-4 flex items-center justify-between hover:border-[var(--border-hover)] transition-all group"
+                >
+                  <div className="min-w-0 flex-1 pr-3">
+                    <p className="font-extrabold text-white text-sm truncate">{template.name}</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 truncate leading-relaxed">
+                      {template.description || 'Custom training template'}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-2.5">
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-[var(--surface-3)] px-2 py-0.5 rounded text-[var(--accent)] border border-white/5">
+                        {template.exercises?.length || 0} routines
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-9 w-9 rounded-full bg-[var(--surface-3)] border border-white/5 text-white flex items-center justify-center shrink-0 group-hover:bg-[var(--accent)] group-hover:border-0 group-hover:text-white transition-all shadow-md">
+                    {saving ? (
+                      <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play weight="bold" className="h-4.5 w-4.5 fill-current ml-0.5 transition-transform group-hover:scale-110" />
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-md mx-auto p-4 pb-32 space-y-4 w-full overflow-hidden min-h-[100dvh]">

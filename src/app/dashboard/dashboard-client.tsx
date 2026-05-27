@@ -7,7 +7,7 @@ import { motion } from 'motion/react'
 
 interface Props {
   stats: { weeklyWorkouts: number; targetWorkouts: number; totalVolume: number; currentWeight: number; weightChange: number; streak: number }
-  recentWorkouts: { id: string; name: string; date: string; exercises: number; duration: string; volume: number }[]
+  recentWorkouts: { id: string; name: string; date: string; exercises: number; duration: string; volume: number; isActive?: boolean }[]
   userName: string
 }
 
@@ -179,7 +179,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
       <motion.div variants={itemVariants} className="mb-6">
         <div className="flex items-center justify-between mb-3.5">
           <h2 className="text-xl font-bold tracking-tight text-white">Recent Workouts</h2>
-          <Link href="/workout/live" className="text-sm text-[var(--accent)] font-semibold hover:text-[var(--accent-hover)]">See All</Link>
+          <Link href="/history" className="text-sm text-[var(--accent)] font-semibold hover:text-[var(--accent-hover)]">See All</Link>
         </div>
         
         {recentWorkouts.length === 0 ? (
@@ -191,25 +191,33 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
         ) : (
           <div className="space-y-3">
             {recentWorkouts.map((w) => (
-              <motion.div 
-                key={w.id} 
-                whileTap={{ scale: 0.98 }}
-                className="card p-4 flex items-center justify-between bg-[var(--surface-1)] border-[var(--border-default)] cursor-pointer hover:border-[var(--border-hover)]"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="h-12 w-12 rounded-xl bg-[var(--surface-3)] flex items-center justify-center border border-[var(--border-default)]">
-                    <Barbell className="h-6 w-6 text-[var(--text-secondary)]" />
+              <Link key={w.id} href={w.isActive ? "/workout/live" : "/history"}>
+                <motion.div 
+                  whileTap={{ scale: 0.98 }}
+                  className="card p-4 flex items-center justify-between bg-[var(--surface-1)] border-[var(--border-default)] cursor-pointer hover:border-[var(--border-hover)]"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-12 w-12 rounded-xl bg-[var(--surface-3)] flex items-center justify-center border border-[var(--border-default)]">
+                      <Barbell className="h-6 w-6 text-[var(--text-secondary)]" />
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-bold text-white">{w.name}</p>
+                      <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
+                        {w.exercises} exercises · {w.duration}
+                        {w.volume > 0 && <span className="data-number"> · {(w.volume / 1000).toFixed(1)}T</span>}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[15px] font-bold text-white">{w.name}</p>
-                    <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
-                      {w.exercises} exercises · {w.duration}
-                      {w.volume > 0 && <span className="data-number"> · {(w.volume / 1000).toFixed(1)}T</span>}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[12px] text-[var(--text-disabled)] font-medium">{w.date}</span>
-              </motion.div>
+                  {w.isActive ? (
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md animate-pulse">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Live
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-[var(--text-disabled)] font-medium">{w.date}</span>
+                  )}
+                </motion.div>
+              </Link>
             ))}
           </div>
         )}

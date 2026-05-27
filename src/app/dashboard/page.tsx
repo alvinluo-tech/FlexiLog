@@ -57,11 +57,23 @@ export default async function DashboardPage() {
   const recentWorkouts = sessions?.map((s: any) => {
     const sets = s.workout_sets || []
     const names = [...new Set(sets.map((x: any) => x.exercises?.name).filter(Boolean))]
-    const dur = s.ended_at ? Math.round((new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) / 60000) : 0
+    const isActive = !s.ended_at
+    const dur = s.ended_at 
+      ? Math.max(1, Math.round((new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) / 60000))
+      : 0
     const vol = sets.reduce((sum: number, x: any) => sum + (Number(x.weight_kg) || 0) * (x.reps || 0), 0)
     const diff = Math.floor((now.getTime() - new Date(s.started_at).getTime()) / 86400000)
     const dateStr = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff < 7 ? diff + 'd ago' : new Date(s.started_at).toLocaleDateString('en', { month: 'short', day: 'numeric' })
-    return { id: s.id, name: names[0] ? names[0] + ' Day' : 'Workout', date: dateStr, exercises: names.length, duration: dur > 0 ? dur + 'min' : 'Active', volume: vol }
+    
+    return { 
+      id: s.id, 
+      name: names[0] ? names[0] + ' Day' : 'Workout', 
+      date: dateStr, 
+      exercises: names.length, 
+      duration: isActive ? 'Active' : dur + ' min', 
+      volume: vol,
+      isActive
+    }
   }) || []
 
   return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak }} recentWorkouts={recentWorkouts} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
