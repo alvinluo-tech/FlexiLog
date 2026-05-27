@@ -495,11 +495,10 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
         </div>
       </div>
 
-      {/* Details Sheet Dialog */}
-      <AnimatePresence>
-        {selectedExercise && (
-          <Dialog open={!!selectedExercise} onOpenChange={(open) => { if (!open) setSelectedExercise(null) }}>
-            <DialogContent className="max-w-md w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      {/* Details Dialog */}
+      {selectedExercise && (
+        <Dialog open={!!selectedExercise} onOpenChange={(open) => { if (!open) setSelectedExercise(null) }}>
+          <DialogContent className="max-w-md w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 shadow-2xl">
               <DialogHeader className="p-0 border-b border-white/5 relative">
                 {(() => {
                   const demoImg = getDemoImage(selectedExercise.name)
@@ -630,7 +629,6 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
             </DialogContent>
           </Dialog>
         )}
-      </AnimatePresence>
     </div>
   )
 }
