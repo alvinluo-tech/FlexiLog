@@ -13,6 +13,7 @@ import { createWorkoutSession, endWorkoutSession, addWorkoutSet, discardWorkoutS
 import { deleteTemplate, renameTemplate } from '@/app/actions/templates'
 import { checkAndUpdatePRs } from '@/app/actions/records'
 import { getRecordLabel, getRecordUnit } from '@/lib/record-utils'
+import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 
