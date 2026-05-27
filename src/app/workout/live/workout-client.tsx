@@ -328,14 +328,42 @@ export default function WorkoutLiveClient({
   }, [sessionId, router])
 
   // ── Exercise & Set Management ──
+  // Helper: parse rep range like "8-12" and return middle value
+  const parseRepRange = useCallback((repsStr: string): { display: string; middle: number } => {
+    if (!repsStr) return { display: '', middle: 0 }
+    
+    // Check if it's a range like "8-12" or "8–12"
+    const rangeMatch = repsStr.match(/^(\d+)[-–](\d+)$/)
+    if (rangeMatch) {
+      const min = parseInt(rangeMatch[1])
+      const max = parseInt(rangeMatch[2])
+      const middle = Math.round((min + max) / 2)
+      return { display: repsStr, middle }
+    }
+    
+    // Single number
+    const num = parseInt(repsStr)
+    if (!isNaN(num)) {
+      return { display: repsStr, middle: num }
+    }
+    
+    return { display: repsStr, middle: 0 }
+  }, [])
+
   const getSetPlaceholder = useCallback((block: ExerciseBlock, setIndex: number) => {
     const prevWeight = block.previousData?.[setIndex]?.weight || (setIndex > 0 ? block.sets[setIndex-1]?.weight : '') || ''
     const prevReps = block.previousData?.[setIndex]?.reps || (setIndex > 0 ? block.sets[setIndex-1]?.reps : '') || ''
+    
+    // Parse rep range for display and auto-fill
+    const repsInfo = parseRepRange(prevReps)
+    
     return {
       weight: prevWeight || '0',
-      reps: prevReps || '0'
+      reps: repsInfo.display || '0',
+      repsMiddle: repsInfo.middle,
+      repsRange: repsInfo.display.includes('-') || repsInfo.display.includes('–')
     }
-  }, [])
+  }, [parseRepRange])
 
   const addExercise = useCallback((exercise: Exercise) => {
     const prev = previousData[exercise.id]
@@ -854,15 +882,22 @@ export default function WorkoutLiveClient({
                       />
                       
                       {/* Reps Input */}
-                      <Input
-                        type="number"
-                        placeholder={placeholders.reps !== '0' ? placeholders.reps : '0'}
-                        value={set.reps}
-                        onChange={(e) => updateSet(blockIndex, setIndex, 'reps', e.target.value)}
-                        onBlur={() => handleSetInputBlur(blockIndex, setIndex)}
-                        className="h-9 text-center text-sm bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)] focus-visible:ring-0 rounded-lg text-white font-bold data-number"
-                        inputMode="numeric"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder={placeholders.repsMiddle > 0 ? String(placeholders.repsMiddle) : '0'}
+                          value={set.reps}
+                          onChange={(e) => updateSet(blockIndex, setIndex, 'reps', e.target.value)}
+                          onBlur={() => handleSetInputBlur(blockIndex, setIndex)}
+                          className="h-9 text-center text-sm bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)] focus-visible:ring-0 rounded-lg text-white font-bold data-number"
+                          inputMode="numeric"
+                        />
+                        {placeholders.repsRange && !set.reps && (
+                          <div className="absolute -bottom-4 left-0 right-0 text-center">
+                            <span className="text-[9px] text-[var(--text-disabled)]">{placeholders.reps}</span>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Delete Button */}
                       <div className="flex items-center justify-center">
