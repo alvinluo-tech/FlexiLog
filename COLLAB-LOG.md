@@ -18,6 +18,7 @@
 | 2026-05-27 18:50 | hermes | Full Chinese localization of entire app UI | 15+ files | Translated all English UI text to Chinese across dashboard, history, feed, login, register, auth, profile, exercises, AI coach, chat, charts, navigation |
 | 2026-05-27 19:15 | hermes | Expanded exercise database from 25 to 210 exercises, 12 muscle groups | `exercises-client.tsx` + DB migration | Added glutes/forearms/traps/cardio categories. Reference: Strong/Hevy/JEFIT exercise libraries |
 | 2026-05-27 19:30 | hermes | Redesigned exercises page: sidebar filter + equipment-grouped 2-col grid | `exercises-client.tsx` | Left sidebar for muscle groups, right side for exercises grouped by equipment (杠铃/哑铃/绳索/器械/自重), sub-category chips |
+| 2026-05-27 20:30 | hermes | Competitive optimization sprint: market research + 22 files changed | Multiple | P0: middleware protection, AI timeout, error boundaries, type fixes, Chinese dates, username display. P1: PR tracking system (Brzycki 1RM), rest timer customization, workout notes, input validation. P2: history filters/pagination, data export, onboarding, login redirect, nav warning |
 
 ## Rules
 

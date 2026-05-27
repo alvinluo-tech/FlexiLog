@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { 
   MagnifyingGlass, Plus, Barbell, ArrowRight, Sparkle, 
-  Clock, Lightning, Trophy, BookOpen, Info, Target, ChevronDown, X
+  Clock, Lightning, Trophy, BookOpen, Info, Target, X
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'

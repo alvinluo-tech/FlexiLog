@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { House } from '@phosphor-icons/react'
 
 export default function NotFound() {
   return (
@@ -14,8 +13,7 @@ export default function NotFound() {
           href="/"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--accent)] text-white font-bold text-sm hover:bg-[var(--accent-hover)] transition-colors"
         >
-          <House className="h-4 w-4" />
-          返回首页
+          ← 返回首页
         </Link>
       </div>
     </div>
