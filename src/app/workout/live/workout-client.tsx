@@ -320,43 +320,37 @@ export default function WorkoutLiveClient({
     if (!aiPlan || !aiPlan.days?.[dayIndex]) return
     setSaving(true)
     try {
-      const result = await createWorkoutSession()
-      if (result.data) {
-        setSessionId(result.data.id)
-        setSessionStartTime(Date.now())
-        setElapsedTime(0)
-        
-        const dayPlan = aiPlan.days[dayIndex]
-        if (dayPlan?.exercises) {
-          const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
-            const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
-            return {
-              exercise: matched
-                ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
-                : { id: 'ai-' + ex.name, name: ex.name, muscle_group: dayPlan.focus || 'general' },
-              sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
-                const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
-                const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
-                const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
-                return {
-                  id: 'set-' + Date.now() + '-' + i,
-                  weight: parseWeightFromPlan(ex),
-                  reps: repsNum,
-                  completed: false,
-                  saved: false
-                }
-              }),
-              previousData: matched ? (previousData[matched.id] || []) : [],
-              restSeconds: matched?.rest_seconds ?? 90
-            }
-          })
-          setExerciseBlocks(newBlocks)
-        }
-        
-        setShowDayPicker(false)
-        localStorage.removeItem('ai_plan')
-        setAiPlan(null)
+      const dayPlan = aiPlan.days[dayIndex]
+      if (dayPlan?.exercises) {
+        const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
+          const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
+          return {
+            exercise: matched
+              ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
+              : { id: 'ai-' + ex.name, name: ex.name, muscle_group: dayPlan.focus || 'general' },
+            sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
+              const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
+              const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
+              const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
+              return {
+                id: 'set-' + Date.now() + '-' + i,
+                weight: parseWeightFromPlan(ex),
+                reps: repsNum,
+                completed: false,
+                saved: false
+              }
+            }),
+            previousData: matched ? (previousData[matched.id] || []) : [],
+            restSeconds: matched?.rest_seconds ?? 90
+          }
+        })
+        setExerciseBlocks(newBlocks)
+        setWorkoutPhase('preparing')
       }
+      
+      setShowDayPicker(false)
+      localStorage.removeItem('ai_plan')
+      setAiPlan(null)
     } catch (e) {
       console.error('Failed to load AI plan:', e)
     } finally {
