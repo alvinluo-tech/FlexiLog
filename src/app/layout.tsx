@@ -46,15 +46,15 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full overflow-x-hidden`}
     >
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased">
+      <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased overflow-x-hidden">
         <PWARegister />
         <Sidebar />
-        <main className="flex-1 md:ml-60 pb-20 md:pb-0">
+        <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-x-hidden">
           {children}
         </main>
         <BottomNav />
