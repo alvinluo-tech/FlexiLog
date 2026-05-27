@@ -6,6 +6,9 @@
 
 | Time | Agent | Action | Files Changed | Notes |
 |------|-------|--------|---------------|-------|
+| 2026-05-27 22:15 | hermes | Fixed ghost timer bug - added useRef cleanup for session/rest timers, force clear on discard | `src/app/workout/live/workout-client.tsx` | Timers were persisting after discarding workout due to missing interval cleanup on unmount |
+| 2026-05-27 22:30 | hermes | Completed all remaining features: charts, history, social, AI extensions | Multiple files | Added WeightChart, VolumeChart, /history page, /feed page, social actions, /api/ai-extended |
+| 2026-05-27 22:45 | hermes | Cleaned up merged branches | Git branches | Deleted feat/ui-redesign-v2 and feat/ai-coach-chat-v2 (both merged to main) |
 | 2026-05-27 18:03 | antigravity | Redesigned workout module to match Strong/Hevy UX patterns, added automatic set database syncing, inline set deletion, and input auto-filling placeholders. | `src/app/workout/live/workout-client.tsx`, `src/app/actions/workout.ts` | Completed the complete redesign of the workout active tracking screen and added real-time Supabase syncing. |
 
 ## Rules
