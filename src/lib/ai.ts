@@ -4,7 +4,9 @@ interface MiMoResponse {
   choices: {
     message: {
       content: string
+      reasoning_content?: string
     }
+    finish_reason: string
   }[]
 }
 
@@ -42,84 +44,134 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
   const apiKey = process.env.MIMO_API_KEY
   const baseUrl = process.env.MIMO_BASE_URL || 'https://token-plan-ams.xiaomimimo.com/v1'
 
-  const prompt = `你是一个专业的健身教练。根据以下用户参数生成一个个性化的训练计划。
+  if (!apiKey) {
+    throw new Error('MIMO_API_KEY not configured')
+  }
 
-用户参数：
-- 性别: ${params.gender || '未知'}
-- 年龄: ${params.age || '未知'}
-- 身高: ${params.height_cm || '未知'}cm
-- 体重: ${params.weight_kg || '未知'}kg
-- 体脂率: ${params.body_fat_percentage || '未知'}%
-- 健身年限: ${params.fitness_years || '未知'}年
-- 伤病史: ${params.injuries || '无'}
+  const prompt = `生成一个训练计划，严格按JSON格式返回，不要有其他文字。
+
+用户信息：
 - 目标: ${params.goal || '增肌'}
-- 每周训练天数: ${params.training_days_per_week || 5}天
-- 单次训练时长: ${params.session_duration_minutes || 60}分钟
-- 器械条件: ${params.equipment || '商业健身房'}
+- 每周${params.training_days_per_week || 5}天，每次${params.session_duration_minutes || 60}分钟
+- 器械: ${params.equipment || '商业健身房'}
+- 健身年限: ${params.fitness_years || 1}年
 
-请生成一个JSON格式的训练计划，包含：
-1. 计划名称 (name)
-2. 计划描述 (description)
-3. 持续时间 (duration)
-4. 每天的训练内容 (days)，每天包含：
-   - day: 星期几
-   - focus: 训练重点
-   - exercises: 动作列表，每个动作包含 name, sets, reps, rest
+要求：
+1. plan_name: 计划名称
+2. plan_desc: 简短描述
+3. plan_duration: 持续时间
+4. training_days: 数组，每天包含day(周一到周日)、focus(训练部位)、exercises数组
+5. 每个exercise包含name(中文动作名)、sets、reps、rest
 
-只返回JSON，不要其他文字。`
+直接返回JSON，不要markdown代码块。`
 
-  console.log('Calling MiMo API:', { baseUrl, hasKey: !!apiKey })
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  console.log('Calling MiMo API...')
+  
+  const response = await fetch(baseUrl + '/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': 'Bearer ' + apiKey,
     },
     body: JSON.stringify({
       model: 'mimo-v2.5-pro',
       messages: [
         {
           role: 'system',
-          content: '你是一个专业的健身教练，擅长制定个性化训练计划。请用JSON格式回复。'
+          content: '你是健身教练，只返回JSON格式的训练计划，不要有任何其他文字。'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
+      max_tokens: 4000,
       temperature: 0.7,
-      max_tokens: 2000,
     }),
   })
+
+  console.log('Response status:', response.status)
 
   if (!response.ok) {
     const errorBody = await response.text()
     console.error('MiMo API error:', response.status, errorBody)
-    throw new Error(`MiMo API error: ${response.status} - ${errorBody}`)
+    throw new Error('MiMo API error: ' + response.status)
   }
 
   const data: MiMoResponse = await response.json()
-  const content = data.choices[0]?.message?.content
+  console.log('Response data:', JSON.stringify(data).substring(0, 500))
+  
+  // Try to get content from multiple sources
+  let content = data.choices[0]?.message?.content || ''
+  const reasoningContent = data.choices[0]?.message?.reasoning_content || ''
+  const finishReason = data.choices[0]?.finish_reason || ''
+
+  console.log('Content length:', content.length)
+  console.log('Reasoning length:', reasoningContent.length)
+  console.log('Finish reason:', finishReason)
+
+  // If content is empty but reasoning has content, try to extract JSON from reasoning
+  if (!content && reasoningContent) {
+    console.log('Using reasoning_content')
+    // Try to find JSON in reasoning content
+    const jsonMatch = reasoningContent.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      content = jsonMatch[0]
+    }
+  }
 
   if (!content) {
     throw new Error('No content in MiMo response')
   }
 
-  // Parse JSON from response (handle markdown code blocks)
-  let jsonStr = content
-  if (content.includes('```json')) {
-    jsonStr = content.split('```json')[1].split('```')[0].trim()
-  } else if (content.includes('```')) {
-    jsonStr = content.split('```')[1].split('```')[0].trim()
+  // Parse JSON from response
+  let jsonStr = content.trim()
+  
+  // Remove markdown code blocks if present
+  if (jsonStr.includes('```json')) {
+    jsonStr = jsonStr.split('```json')[1].split('```')[0].trim()
+  } else if (jsonStr.includes('```')) {
+    jsonStr = jsonStr.split('```')[1].split('```')[0].trim()
   }
 
-  return JSON.parse(jsonStr) as WorkoutPlan
+  console.log('Parsing JSON:', jsonStr.substring(0, 200))
+
+  try {
+    const parsed = JSON.parse(jsonStr)
+    
+    // Normalize the response to match our interface
+    const plan: WorkoutPlan = {
+      name: parsed.name || parsed.plan_name || '训练计划',
+      description: parsed.description || parsed.plan_desc || '个性化训练计划',
+      duration: parsed.duration || parsed.plan_duration || '4周',
+      days: (parsed.days || parsed.training_days || []).map((day: any) => ({
+        day: day.day || '',
+        focus: day.focus || '',
+        exercises: (day.exercises || []).map((ex: any) => ({
+          name: ex.name || '',
+          sets: ex.sets || 3,
+          reps: String(ex.reps || '10'),
+          rest: ex.rest || '90s',
+        })),
+      })),
+    }
+    
+    return plan
+  } catch (parseError) {
+    console.error('JSON parse error:', parseError)
+    console.error('Raw content:', jsonStr)
+    throw new Error('Failed to parse AI response as JSON')
+  }
 }
 
 export async function analyzeWorkoutHistory(userId: string): Promise<string> {
   const supabase = await createClient()
   const apiKey = process.env.MIMO_API_KEY
   const baseUrl = process.env.MIMO_BASE_URL || 'https://token-plan-ams.xiaomimimo.com/v1'
+
+  if (!apiKey) {
+    throw new Error('MIMO_API_KEY not configured')
+  }
 
   // Get recent workouts
   const { data: sessions } = await supabase
@@ -144,61 +196,48 @@ export async function analyzeWorkoutHistory(userId: string): Promise<string> {
     return '暂无训练数据，请先记录一些训练。'
   }
 
-  const workoutSummary = sessions.map(s => {
+  const workoutSummary = sessions.map((s: any) => {
     const sets = s.workout_sets || []
-    const exercises = [...new Set(sets.map(set => (set.exercises as any)?.name).filter(Boolean))]
-    const totalVolume = sets.reduce((sum, set) => sum + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
+    const exerciseNames = [...new Set(sets.map((set: any) => (set.exercises as any)?.name).filter(Boolean))]
+    const totalVolume = sets.reduce((sum: number, set: any) => sum + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
     return {
       date: s.started_at?.split('T')[0],
-      exercises,
+      exercises: exerciseNames,
       totalSets: sets.length,
       totalVolume,
     }
   })
 
-  const prompt = `分析以下训练历史数据，给出训练建议：
+  const prompt = '分析以下训练数据并给出建议：\n' + JSON.stringify(workoutSummary, null, 2) + '\n\n请简洁分析（不超过150字）：1.训练频率 2.容量趋势 3.改进建议'
 
-训练记录：
-${JSON.stringify(workoutSummary, null, 2)}
-
-请分析：
-1. 训练频率是否合理
-2. 各部位训练是否均衡
-3. 训练容量趋势
-4. 是否存在过度训练或训练不足
-5. 具体改进建议
-
-用简洁的中文回答，不超过200字。`
-
-  const response = await fetch(`${baseUrl}/chat/completions`, {
+  const response = await fetch(baseUrl + '/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': 'Bearer ' + apiKey,
     },
     body: JSON.stringify({
       model: 'mimo-v2.5-pro',
       messages: [
         {
           role: 'system',
-          content: '你是一个专业的健身数据分析教练。请简洁地分析训练数据并给出建议。'
+          content: '你是健身数据分析教练，简洁分析训练数据。'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
+      max_tokens: 1000,
       temperature: 0.7,
-      max_tokens: 500,
     }),
   })
 
   if (!response.ok) {
-    const errorBody = await response.text()
-    console.error('MiMo API error:', response.status, errorBody)
-    throw new Error(`MiMo API error: ${response.status} - ${errorBody}`)
+    throw new Error('MiMo API error: ' + response.status)
   }
 
   const data: MiMoResponse = await response.json()
-  return data.choices[0]?.message?.content || '无法生成分析'
+  const content = data.choices[0]?.message?.content || data.choices[0]?.message?.reasoning_content || '无法生成分析'
+  return content
 }

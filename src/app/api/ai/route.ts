@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { type, params } = body
 
+    console.log('AI request:', { type, userId: user.id })
+
     if (type === 'generate_plan') {
       // Get user profile for better recommendations
       const { data: profile } = await supabase
@@ -27,14 +29,22 @@ export async function POST(request: NextRequest) {
         ...params,
       }
 
+      console.log('Generating plan with params:', planParams)
+      
       const plan = await generateWorkoutPlan(planParams)
 
+      console.log('Plan generated:', plan)
+
       // Save the plan
-      await supabase.from('ai_plans').insert({
+      const { error: saveError } = await supabase.from('ai_plans').insert({
         user_id: user.id,
         plan_type: 'weekly',
         plan_data: plan,
       })
+
+      if (saveError) {
+        console.error('Failed to save plan:', saveError)
+      }
 
       return NextResponse.json({ plan })
     }
@@ -45,10 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: '未知请求类型' }, { status: 400 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('AI API error:', error)
+    console.error('Error message:', error.message)
+    console.error('Error stack:', error.stack)
     return NextResponse.json(
-      { error: 'AI 服务暂时不可用' },
+      { error: error.message || 'AI 服务暂时不可用' },
       { status: 500 }
     )
   }
