@@ -64,8 +64,8 @@ function ResetPasswordContent() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--surface-0)]">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-[var(--accent)] flex items-center justify-center mx-auto mb-4">
-            <Lightning weight="fill" className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center mx-auto mb-4 bg-[var(--surface-1)]">
+            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">FlexiLog</h1>
           <p className="text-sm text-[var(--text-tertiary)] mt-1">重置密码</p>

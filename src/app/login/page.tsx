@@ -27,8 +27,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm mx-auto">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="h-16 w-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Lightning weight="fill" className="h-8 w-8 text-white" />
+          <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center mx-auto mb-4 shadow-lg bg-[var(--surface-1)]">
+            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-[32px] font-bold tracking-tight">FlexiLog</h1>
           <p className="text-[15px] text-[var(--text-tertiary)] mt-1">AI Fitness Tracker</p>

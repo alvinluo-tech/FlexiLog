@@ -21,8 +21,8 @@ export function Sidebar() {
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col border-r border-[var(--border-default)] bg-[var(--surface-1)]">
       <div className="p-6 pb-8">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl gradient-accent flex items-center justify-center">
-            <Lightning weight="fill" className="h-5 w-5 text-white" />
+          <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-[var(--surface-2)]">
+            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
           </div>
           <div>
             <h1 className="text-[18px] font-bold tracking-tight">FlexiLog</h1>
