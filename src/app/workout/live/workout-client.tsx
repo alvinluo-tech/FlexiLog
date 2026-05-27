@@ -149,18 +149,19 @@ export default function WorkoutLiveClient({
   // Rest countdown timer
   useEffect(() => {
     if (restTimerRef.current) clearInterval(restTimerRef.current)
-    if (isRestRunning && restTimeLeft > 0) {
-      restTimerRef.current = setInterval(() => {
-        if (!mountedRef.current) return
-        setRestTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsRestRunning(false)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
+    if (!isRestRunning || restTimeLeft <= 0) return
+    
+    restTimerRef.current = setInterval(() => {
+      if (!mountedRef.current) return
+      setRestTimeLeft(prev => {
+        if (prev <= 1) {
+          setIsRestRunning(false)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    
     return () => {
       if (restTimerRef.current) clearInterval(restTimerRef.current)
     }
@@ -297,9 +298,12 @@ export default function WorkoutLiveClient({
         setIsRestRunning(false)
         setRestTimeLeft(0)
         setShowDiscardConfirm(false)
+        setWorkoutPhase('idle')
         
         localStorage.removeItem('active_workout_session')
         localStorage.removeItem('ai_plan')
+        localStorage.removeItem('workout_exercises')
+        localStorage.removeItem('workout_phase')
       } else {
         alert('放弃失败: ' + (result.error || '未知错误'))
       }
