@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { 
   MagnifyingGlass, Plus, Barbell, ArrowRight, Sparkle, 
-  Clock, Lightning, Trophy, BookOpen, Info, Target, ChevronDown
+  Clock, Lightning, Trophy, BookOpen, Info, Target, ChevronDown, X
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
+import { createCustomExercise } from '@/app/actions/exercises'
+import { useRouter } from 'next/navigation'
 
 interface Exercise {
   id: string
@@ -359,10 +361,17 @@ function getSubCategory(name: string, muscleGroup: string): string {
 }
 
 export default function ExercisesClient({ exercises, usageCounts = {} }: { exercises: Exercise[]; usageCounts?: Record<string, number> }) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [selectedGroup, setSelectedGroup] = useState('all')
   const [selectedSub, setSelectedSub] = useState('all')
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
+  const [showCustom, setShowCustom] = useState(false)
+  const [customName, setCustomName] = useState('')
+  const [customGroup, setCustomGroup] = useState('chest')
+  const [customDesc, setCustomDesc] = useState('')
+  const [customTips, setCustomTips] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const filteredExercises = useMemo(() => {
     return exercises.filter(ex => {
@@ -383,6 +392,27 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
     setSelectedSub('all')
   }
 
+  const handleCreateCustom = async () => {
+    if (!customName.trim()) return
+    setSaving(true)
+    const result = await createCustomExercise({
+      name: customName.trim(),
+      muscle_group: customGroup,
+      description: customDesc.trim() || undefined,
+      tips: customTips.trim() || undefined,
+    })
+    setSaving(false)
+    if (result.data) {
+      setShowCustom(false)
+      setCustomName('')
+      setCustomDesc('')
+      setCustomTips('')
+      router.refresh()
+    } else if (result.error) {
+      alert('创建失败: ' + result.error)
+    }
+  }
+
   return (
     <div className="w-full h-[calc(100dvh-5rem)] md:h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
       {/* Header - fixed */}
@@ -394,6 +424,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
         <Button
           size="sm"
           variant="secondary"
+          onClick={() => setShowCustom(true)}
           className="gap-1.5 h-9 rounded-xl border border-white/5 bg-[var(--surface-2)] text-white hover:bg-[var(--surface-3)] active:scale-95 transition-transform text-xs font-bold"
         >
           <Plus weight="bold" className="h-4 w-4 text-[var(--accent)]" />
@@ -629,6 +660,88 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
             </DialogContent>
           </Dialog>
         )}
+
+      {/* Custom Exercise Dialog */}
+      <Dialog open={showCustom} onOpenChange={setShowCustom}>
+        <DialogContent className="max-w-sm w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl">
+          <div className="p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
+                <Plus weight="bold" className="h-5 w-5 text-[var(--accent)]" />
+                创建自定义动作
+              </DialogTitle>
+              <button onClick={() => setShowCustom(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-3)] transition-colors cursor-pointer">
+                <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+              </button>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-[var(--text-secondary)]">动作名称 *</label>
+              <Input
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="例如：杠铃弯举"
+                className="h-10 bg-[var(--surface-2)] border-white/5 focus-visible:border-[var(--accent)] rounded-xl text-sm"
+                autoFocus
+              />
+            </div>
+
+            {/* Muscle Group */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-[var(--text-secondary)]">目标肌群</label>
+              <div className="flex flex-wrap gap-1.5">
+                {muscleGroups.map(g => (
+                  <button
+                    key={g.value}
+                    onClick={() => setCustomGroup(g.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer",
+                      customGroup === g.value
+                        ? "bg-white text-black border-white"
+                        : "bg-[var(--surface-2)] text-[var(--text-secondary)] border-white/5"
+                    )}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-[var(--text-secondary)]">动作描述</label>
+              <textarea
+                value={customDesc}
+                onChange={(e) => setCustomDesc(e.target.value)}
+                placeholder="简要描述动作要领..."
+                rows={2}
+                className="w-full px-3 py-2 bg-[var(--surface-2)] border border-white/5 rounded-xl text-sm text-white placeholder:text-[var(--text-disabled)] focus-visible:border-[var(--accent)] focus-visible:outline-none resize-none"
+              />
+            </div>
+
+            {/* Tips */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-[var(--text-secondary)]">训练提示</label>
+              <Input
+                value={customTips}
+                onChange={(e) => setCustomTips(e.target.value)}
+                placeholder="例如：保持核心收紧"
+                className="h-10 bg-[var(--surface-2)] border-white/5 focus-visible:border-[var(--accent)] rounded-xl text-sm"
+              />
+            </div>
+
+            {/* Submit */}
+            <Button
+              onClick={handleCreateCustom}
+              disabled={!customName.trim() || saving}
+              className="w-full h-11 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all disabled:opacity-40"
+            >
+              {saving ? '创建中...' : '创建动作'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
