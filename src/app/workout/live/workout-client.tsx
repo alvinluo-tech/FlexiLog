@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { 
   Play, Pause, ArrowCounterClockwise, Plus, Trash, 
-  Timer, CaretDown, CaretUp, Check, Barbell, FloppyDisk
+  Timer, CaretDown, CaretUp, Check, Barbell, FloppyDisk, CalendarBlank
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet } from '@/app/actions/workout'
 import { useRouter } from 'next/navigation'
@@ -39,9 +39,10 @@ interface WorkoutLiveClientProps {
   exercises: Exercise[]
   previousData: Record<string, { weight: string; reps: string }[]>
   userId: string
+  templates?: any[]
 }
 
-export default function WorkoutLiveClient({ exercises, previousData, userId }: WorkoutLiveClientProps) {
+export default function WorkoutLiveClient({ exercises, previousData, userId, templates = [] }: WorkoutLiveClientProps) {
   const router = useRouter()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [exerciseBlocks, setExerciseBlocks] = useState<ExerciseBlock[]>([])
@@ -52,6 +53,7 @@ export default function WorkoutLiveClient({ exercises, previousData, userId }: W
   const [sessionStartTime] = useState(Date.now())
   const [elapsedTime, setElapsedTime] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
 
   // Start session on mount and load AI plan if exists
   useEffect(() => {
@@ -218,6 +220,45 @@ export default function WorkoutLiveClient({ exercises, previousData, userId }: W
     })
   }, [])
 
+  const loadTemplate = useCallback((template: any) => {
+    try {
+      const plan = template.exercises
+      if (plan && plan.length > 0) {
+        const today = new Date().getDay()
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        const todayName = dayNames[today]
+        
+        const todayPlan = plan.find((d: any) => 
+          d.day?.toLowerCase().includes(todayName.toLowerCase())
+        ) || plan[0]
+        
+        if (todayPlan?.exercises) {
+          const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => ({
+            exercise: {
+              id: 'template-' + ex.name,
+              name: ex.name,
+              muscle_group: todayPlan.focus || 'general'
+            },
+            sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
+              id: 'set-' + Date.now() + '-' + i,
+              weight: '',
+              reps: ex.reps || '',
+              rpe: '',
+              completed: false,
+              saved: false
+            })),
+            previousData: [],
+            collapsed: false
+          }))
+          setExerciseBlocks(newBlocks)
+        }
+      }
+      setShowTemplates(false)
+    } catch (e) {
+      console.error('Failed to load template:', e)
+    }
+  }, [])
+
   const finishWorkout = useCallback(async () => {
     if (!sessionId) return
     setSaving(true)
@@ -373,6 +414,46 @@ export default function WorkoutLiveClient({ exercises, previousData, userId }: W
           )}
         </Card>
       ))}
+
+      {/* Templates Button */}
+      {templates.length > 0 && exerciseBlocks.length === 0 && (
+        <Button 
+          variant="outline" 
+          className="w-full h-12 border-[var(--border-default)] bg-[var(--surface-2)] rounded-[var(--radius-lg)]"
+          onClick={() => setShowTemplates(true)}
+        >
+          <CalendarBlank className="h-5 w-5 mr-2 text-[var(--accent)]" />
+          Load from Template
+        </Button>
+      )}
+
+      {/* Templates Dialog */}
+      <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
+        <DialogContent className="bg-[var(--surface-2)] border-[var(--border-default)] rounded-[var(--radius-xl)]">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold">Saved Templates</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {templates.map(template => (
+              <Card
+                key={template.id}
+                className="cursor-pointer hover:bg-[var(--surface-3)] transition-colors bg-transparent border-0 rounded-[var(--radius-md)]"
+                onClick={() => loadTemplate(template)}
+              >
+                <CardContent className="p-3">
+                  <div className="font-medium">{template.name}</div>
+                  <div className="text-xs text-[var(--text-tertiary)] mt-1">
+                    {template.description || 'Custom template'}
+                  </div>
+                  <div className="text-xs text-[var(--text-disabled)] mt-2">
+                    {template.exercises?.length || 0} training days
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Exercise */}
       <Dialog open={showExercisePicker} onOpenChange={setShowExercisePicker}>

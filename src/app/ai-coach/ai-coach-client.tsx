@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { savePlanAsTemplate } from '@/app/actions/templates'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,15 +30,25 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
   const [currentPlan, setCurrentPlan] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('0')
+  const [saving, setSaving] = useState(false)
 
-  const applyToWorkout = () => {
+  const applyToWorkout = async () => {
     if (!displayPlan || !displayPlan.days || displayPlan.days.length === 0) return
     
-    // Store the plan in localStorage for the workout page to use
-    localStorage.setItem('ai_plan', JSON.stringify(displayPlan))
+    setSaving(true)
     
-    // Navigate to workout page
-    router.push('/workout/live')
+    // Save as template to Supabase
+    const result = await savePlanAsTemplate(displayPlan)
+    
+    if (result.error) {
+      alert('Failed to save plan: ' + result.error)
+    } else {
+      // Also store in localStorage for immediate use
+      localStorage.setItem('ai_plan', JSON.stringify(displayPlan))
+      router.push('/workout/live')
+    }
+    
+    setSaving(false)
   }
 
   const handleGenerate = async () => {
@@ -198,9 +209,9 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 ))}
               </Tabs>
 
-              <Button className="w-full h-12 gap-2 rounded-[var(--radius-lg)]" size="lg" onClick={applyToWorkout}>
+              <Button className="w-full h-12 gap-2 rounded-[var(--radius-lg)]" size="lg" onClick={applyToWorkout} disabled={saving}>
                 <CalendarBlank className="h-5 w-5" />
-                应用到今日训练
+                {saving ? "保存中..." : "应用到今日训练"}
               </Button>
             </>
           )}

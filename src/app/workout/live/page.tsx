@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTemplates } from '@/app/actions/templates'
 import WorkoutLiveClient from './workout-client'
 
 export default async function WorkoutLivePage() {
@@ -17,16 +18,13 @@ export default async function WorkoutLivePage() {
     .order('muscle_group')
     .order('name')
 
+  // Fetch templates
+  const { data: templates } = await getTemplates()
+
   // Fetch recent workout for history comparison
   const { data: recentSession } = await supabase
     .from('workout_sessions')
-    .select(`
-      *,
-      workout_sets (
-        *,
-        exercises (name, muscle_group)
-      )
-    `)
+    .select('*, workout_sets (*, exercises (name, muscle_group))')
     .eq('user_id', user.id)
     .order('started_at', { ascending: false })
     .limit(1)
@@ -52,6 +50,7 @@ export default async function WorkoutLivePage() {
       exercises={exercises || []}
       previousData={previousData}
       userId={user.id}
+      templates={templates || []}
     />
   )
 }
