@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lightning, Envelope, Lock } from '@phosphor-icons/react'
@@ -15,9 +15,7 @@ export default function LoginPage() {
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
-    
     const result = await signIn(formData)
-    
     if (result?.error) {
       setError(result.error)
       setLoading(false)
@@ -25,82 +23,69 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--surface-0)]">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex flex-col justify-center px-6 bg-[var(--surface-0)]">
+      <div className="w-full max-w-sm mx-auto">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="h-12 w-12 rounded-xl bg-[var(--accent)] flex items-center justify-center mx-auto mb-4">
-            <Lightning weight="fill" className="h-6 w-6 text-white" />
+        <div className="text-center mb-10">
+          <div className="h-16 w-16 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Lightning weight="fill" className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">FlexiLog</h1>
-          <p className="text-sm text-[var(--text-tertiary)] mt-1">AI 健身记录</p>
+          <h1 className="text-[32px] font-bold tracking-tight">FlexiLog</h1>
+          <p className="text-[15px] text-[var(--text-tertiary)] mt-1">AI Fitness Tracker</p>
         </div>
 
-        <Card className="card-surface border rounded-[var(--radius-xl)]">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">登录</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm text-[var(--text-secondary)]">邮箱</label>
-                <div className="relative">
-                  <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-disabled)]" />
-                  <Input
-                    name="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    required
-                    className="pl-10 bg-[var(--surface-2)] border-[var(--border-default)]"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-[var(--text-secondary)]">密码</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-disabled)]" />
-                  <Input
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    className="pl-10 bg-[var(--surface-2)] border-[var(--border-default)]"
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="text-sm text-[var(--danger)] bg-[var(--danger-muted)] p-3 rounded-[var(--radius-md)]">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 rounded-[var(--radius-md)]"
-              >
-                {loading ? '登录中...' : '登录'}
-              </Button>
-            </form>
-
-            <div className="mt-4 space-y-2 text-center text-sm text-[var(--text-tertiary)]">
-              <div>
-                <Link href="/forgot-password" className="text-[var(--accent)] hover:underline">
-                  忘记密码？
-                </Link>
-              </div>
-              <div>
-                还没有账号？{' '}
-                <Link href="/register" className="text-[var(--accent)] hover:underline">
-                  注册
-                </Link>
-              </div>
+        {/* Form */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[13px] text-[var(--text-secondary)] font-medium">Email</label>
+            <div className="relative">
+              <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-disabled)]" />
+              <Input
+                name="email"
+                type="email"
+                placeholder="your@email.com"
+                required
+                className="h-14 pl-12 bg-[var(--surface-2)] border-[var(--border-default)] rounded-xl text-[16px]"
+              />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[13px] text-[var(--text-secondary)] font-medium">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-disabled)]" />
+              <Input
+                name="password"
+                type="password"
+                placeholder="Enter password"
+                required
+                minLength={6}
+                className="h-14 pl-12 bg-[var(--surface-2)] border-[var(--border-default)] rounded-xl text-[16px]"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-[14px] text-[var(--danger)] bg-[var(--danger-muted)] p-3 rounded-xl">
+              {error}
+            </div>
+          )}
+
+          <form action={handleSubmit}>
+            <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl text-[16px] font-semibold">
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+
+          <div className="flex items-center justify-between mt-2">
+            <Link href="/forgot-password" className="text-[14px] text-[var(--accent)] font-medium">
+              Forgot password?
+            </Link>
+            <Link href="/register" className="text-[14px] text-[var(--accent)] font-medium">
+              Create account
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
