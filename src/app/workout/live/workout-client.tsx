@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet } from '@/app/actions/workout'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'motion/react'
 
 interface Exercise {
   id: string
@@ -279,173 +280,250 @@ export default function WorkoutLiveClient({ exercises, previousData, userId, tem
   }, [exerciseBlocks])
 
   return (
-    <div className="max-w-5xl mx-auto p-4 space-y-4">
+    <div className="max-w-md mx-auto p-4 pb-32 space-y-4 w-full overflow-hidden min-h-[100dvh]">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-2">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">训练中</h1>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            <span className="data-number">{formatTime(elapsedTime)}</span> | <span className="data-number">{completedSets}/{totalSets}</span>组
+          <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            Active Session
+          </h1>
+          <p className="text-xs text-[var(--text-tertiary)] mt-1 font-semibold">
+            Time: <span className="data-number text-[var(--text-secondary)]">{formatTime(elapsedTime)}</span> | Completed: <span className="data-number text-[var(--text-secondary)]">{completedSets}/{totalSets}</span> sets
           </p>
         </div>
-        <Badge variant={isTimerRunning ? 'default' : 'secondary'} className="text-sm px-3 py-1 gap-1.5 data-number bg-[var(--surface-3)] border-[var(--border-default)]">
-          <Timer className="h-3.5 w-3.5" />
+        <Badge variant={isTimerRunning ? 'default' : 'secondary'} className="text-sm px-3.5 py-1.5 gap-1.5 data-number bg-[var(--surface-2)] border border-white/5 rounded-full text-white shadow-md">
+          <Timer weight="bold" className="h-4 w-4 text-[var(--accent)]" />
           {formatTime(timeLeft)}
         </Badge>
       </div>
 
       {/* Rest Timer */}
-      {timeLeft > 0 && (
-        <Card className="bg-[var(--accent-subtle)] border-[var(--accent)]/20 rounded-[var(--radius-lg)]">
-          <CardContent className="p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <Timer className="h-4 w-4 text-[var(--accent)]" />
-              <span className="font-medium text-[var(--text-secondary)]">组间休息</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-semibold text-[var(--accent)] data-number">{formatTime(timeLeft)}</span>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setIsTimerRunning(!isTimerRunning)}>
-                {isTimerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => { setTimeLeft(0); setIsTimerRunning(false) }}>
-                <ArrowCounterClockwise className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Exercise Blocks */}
-      {exerciseBlocks.map((block, blockIndex) => (
-        <Card key={blockIndex} className="card-surface border rounded-[var(--radius-lg)]">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => toggleCollapse(blockIndex)}>
-                {block.collapsed ? <CaretDown className="h-4 w-4 text-[var(--text-tertiary)]" /> : <CaretUp className="h-4 w-4 text-[var(--text-tertiary)]" />}
-                <CardTitle className="text-base font-medium">{block.exercise.name}</CardTitle>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[var(--surface-3)] border-[var(--border-default)]">
-                  {block.exercise.muscle_group}
-                </Badge>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => removeExercise(blockIndex)} className="h-8 w-8 p-0 text-[var(--danger)]">
-                <Trash className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          
-          {!block.collapsed && (
-            <CardContent className="pt-0">
-              {block.previousData && block.previousData.length > 0 && (
-                <div className="mb-3 p-2.5 bg-[var(--surface-2)] rounded-[var(--radius-md)]">
-                  <p className="text-[11px] text-[var(--text-disabled)] mb-1.5">上次训练</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {block.previousData.map((prev, i) => (
-                      <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 data-number bg-[var(--surface-3)] border-[var(--border-default)]">
-                        {prev.weight}kg x {prev.reps}
-                      </Badge>
-                    ))}
+      <AnimatePresence>
+        {timeLeft > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+          >
+            <Card className="bg-gradient-to-r from-[var(--accent-subtle)] to-[var(--accent-subtle)]/5 border-[var(--accent)]/30 rounded-xl shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--accent)]/5 rounded-full blur-xl pointer-events-none" />
+              <CardContent className="p-3.5 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-[var(--accent-muted)] flex items-center justify-center animate-pulse">
+                    <Timer weight="fill" className="h-4 w-4 text-[var(--accent)]" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-white leading-none">Rest Interval</p>
+                    <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5 font-semibold">Catch your breath</p>
                   </div>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="grid grid-cols-[36px_1fr_1fr_1fr_44px] gap-2 text-[11px] text-[var(--text-disabled)] font-medium uppercase tracking-wider">
-                  <div className="text-center">组</div>
-                  <div>重量</div>
-                  <div>次数</div>
-                  <div>RPE</div>
-                  <div></div>
-                </div>
-
-                {block.sets.map((set, setIndex) => (
-                  <div
-                    key={set.id}
-                    className={`grid grid-cols-[36px_1fr_1fr_1fr_44px] gap-2 items-center p-2 rounded-[var(--radius-md)] transition-colors ${
-                      set.completed ? 'bg-[var(--success-muted)]' : ''
-                    }`}
-                  >
-                    <div className="text-xs font-medium text-center text-[var(--text-tertiary)] data-number">{setIndex + 1}</div>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={set.weight}
-                      onChange={(e) => updateSet(blockIndex, setIndex, 'weight', e.target.value)}
-                      className="h-9 text-center text-sm bg-[var(--surface-2)] border-[var(--border-default)] data-number"
-                      inputMode="decimal"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={set.reps}
-                      onChange={(e) => updateSet(blockIndex, setIndex, 'reps', e.target.value)}
-                      className="h-9 text-center text-sm bg-[var(--surface-2)] border-[var(--border-default)] data-number"
-                      inputMode="numeric"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="-"
-                      value={set.rpe}
-                      onChange={(e) => updateSet(blockIndex, setIndex, 'rpe', e.target.value)}
-                      className="h-9 text-center text-sm bg-[var(--surface-2)] border-[var(--border-default)] data-number"
-                      min="1" max="10" step="0.5"
-                      inputMode="decimal"
-                    />
-                    <Button
-                      size="sm"
-                      variant={set.completed ? 'default' : 'outline'}
-                      onClick={() => toggleSetComplete(blockIndex, setIndex)}
-                      className={`w-9 h-9 p-0 rounded-[var(--radius-md)] ${
-                        set.completed 
-                          ? 'bg-[var(--success)] hover:bg-[var(--success)]/90 text-white' 
-                          : 'bg-[var(--surface-2)] border-[var(--border-default)]'
-                      }`}
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl font-black text-[var(--accent)] data-number tracking-tighter">{formatTime(timeLeft)}</span>
+                  <div className="flex gap-1.5">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-9 w-9 p-0 rounded-lg hover:bg-white/5 active:scale-90 text-white" 
+                      onClick={() => setIsTimerRunning(!isTimerRunning)}
                     >
-                      <Check className="h-4 w-4" />
+                      {isTimerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-9 w-9 p-0 rounded-lg hover:bg-white/5 active:scale-90 text-[var(--text-disabled)]" 
+                      onClick={() => { setTimeLeft(0); setIsTimerRunning(false) }}
+                    >
+                      <ArrowCounterClockwise className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <Button variant="ghost" size="sm" onClick={() => addSet(blockIndex)} className="w-full mt-2 text-xs text-[var(--text-tertiary)]">
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                添加一组
+      {/* Exercise Blocks */}
+      <div className="space-y-3.5">
+        {exerciseBlocks.map((block, blockIndex) => (
+          <Card key={blockIndex} className="card-surface bg-[var(--surface-1)] border-[var(--border-default)] rounded-2xl overflow-hidden shadow-md">
+            <CardHeader className="pb-3.5 pt-4 px-4 flex-row items-center justify-between space-y-0">
+              <div 
+                className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0" 
+                onClick={() => toggleCollapse(blockIndex)}
+              >
+                <div className="h-7 w-7 rounded-lg bg-[var(--surface-3)] flex items-center justify-center border border-white/5 shrink-0">
+                  {block.collapsed ? <CaretDown weight="bold" className="h-4 w-4 text-[var(--text-secondary)]" /> : <CaretUp weight="bold" className="h-4 w-4 text-[var(--text-secondary)]" />}
+                </div>
+                <div className="truncate">
+                  <CardTitle className="text-[15px] font-bold text-white truncate leading-tight">{block.exercise.name}</CardTitle>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5 inline-block">
+                    {block.exercise.muscle_group}
+                  </span>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => removeExercise(blockIndex)} 
+                className="h-9 w-9 p-0 text-[var(--danger)] hover:bg-red-500/10 hover:text-[var(--danger)] rounded-lg active:scale-90"
+              >
+                <Trash className="h-4.5 w-4.5" />
               </Button>
-            </CardContent>
-          )}
-        </Card>
-      ))}
+            </CardHeader>
+            
+            <AnimatePresence initial={false}>
+              {!block.collapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                >
+                  <CardContent className="pt-0 px-4 pb-4 overflow-hidden">
+                    {/* Previous Workout stats indicator */}
+                    {block.previousData && block.previousData.length > 0 && (
+                      <div className="mb-4 p-3 bg-[var(--surface-2)] border border-white/5 rounded-xl">
+                        <p className="text-[11px] font-bold text-[var(--text-tertiary)] mb-2 uppercase tracking-wider">Previous Performance</p>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {block.previousData.map((prev, i) => (
+                            <Badge key={i} variant="outline" className="text-[11px] font-bold px-2 py-0.5 data-number bg-[var(--surface-3)] border-white/5 text-[var(--text-secondary)]">
+                              Set {i + 1}: {prev.weight}kg x {prev.reps}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2.5">
+                      {/* Grid Header */}
+                      <div className="grid grid-cols-[32px_1fr_1fr_1fr_42px] gap-2 text-[10px] font-extrabold uppercase text-[var(--text-disabled)] tracking-wider px-1 text-center">
+                        <div>Set</div>
+                        <div className="text-left pl-1">Kg</div>
+                        <div className="text-left pl-1">Reps</div>
+                        <div className="text-left pl-1">RPE</div>
+                        <div>Done</div>
+                      </div>
+
+                      {/* Sets list */}
+                      <div className="space-y-2">
+                        {block.sets.map((set, setIndex) => (
+                          <motion.div
+                            key={set.id}
+                            initial={{ x: -10, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: setIndex * 0.05 }}
+                            className={`grid grid-cols-[32px_1fr_1fr_1fr_42px] gap-2 items-center p-1.5 rounded-xl transition-all duration-200 border ${
+                              set.completed 
+                                ? 'bg-emerald-500/10 border-emerald-500/25 shadow-sm' 
+                                : 'bg-[var(--surface-2)] border-white/5 hover:border-white/10'
+                            }`}
+                          >
+                            {/* Set Number */}
+                            <div className="text-xs font-bold text-center text-[var(--text-tertiary)] data-number">{setIndex + 1}</div>
+                            
+                            {/* Weight input */}
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={set.weight}
+                              onChange={(e) => updateSet(blockIndex, setIndex, 'weight', e.target.value)}
+                              className="h-10 text-center text-sm bg-[var(--surface-3)] border-white/5 focus-visible:ring-[var(--accent)] rounded-lg text-white font-bold data-number"
+                              inputMode="decimal"
+                            />
+                            
+                            {/* Reps input */}
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={set.reps}
+                              onChange={(e) => updateSet(blockIndex, setIndex, 'reps', e.target.value)}
+                              className="h-10 text-center text-sm bg-[var(--surface-3)] border-white/5 focus-visible:ring-[var(--accent)] rounded-lg text-white font-bold data-number"
+                              inputMode="numeric"
+                            />
+                            
+                            {/* RPE input */}
+                            <Input
+                              type="number"
+                              placeholder="-"
+                              value={set.rpe}
+                              onChange={(e) => updateSet(blockIndex, setIndex, 'rpe', e.target.value)}
+                              className="h-10 text-center text-sm bg-[var(--surface-3)] border-white/5 focus-visible:ring-[var(--accent)] rounded-lg text-white font-bold data-number"
+                              min="1" max="10" step="0.5"
+                              inputMode="decimal"
+                            />
+                            
+                            {/* Complete trigger button */}
+                            <div className="flex items-center justify-center">
+                              <Button
+                                size="sm"
+                                variant={set.completed ? 'default' : 'outline'}
+                                onClick={() => toggleSetComplete(blockIndex, setIndex)}
+                                className={`w-9 h-9 p-0 rounded-lg shrink-0 transition-transform active:scale-90 ${
+                                  set.completed 
+                                    ? 'bg-emerald-500 hover:bg-emerald-500 text-white border-0 shadow-lg shadow-emerald-500/20' 
+                                    : 'bg-[var(--surface-3)] border-white/5 text-[var(--text-disabled)]'
+                                }`}
+                              >
+                                <Check weight="bold" className="h-4.5 w-4.5" />
+                              </Button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => addSet(blockIndex)} 
+                      className="w-full mt-3.5 h-10 border border-dashed border-white/5 text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:bg-white/5 hover:text-white rounded-xl active:scale-[0.98] transition-transform"
+                    >
+                      <Plus weight="bold" className="h-3.5 w-3.5 mr-1" />
+                      Add Set
+                    </Button>
+                  </CardContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Card>
+        ))}
+      </div>
 
       {/* Templates Button */}
       {templates.length > 0 && exerciseBlocks.length === 0 && (
         <Button 
           variant="outline" 
-          className="w-full h-12 border-[var(--border-default)] bg-[var(--surface-2)] rounded-[var(--radius-lg)]"
+          className="w-full h-14 border border-white/5 bg-[var(--surface-1)] rounded-2xl text-white font-bold hover:bg-[var(--surface-2)] active:scale-98 transition-transform"
           onClick={() => setShowTemplates(true)}
         >
-          <CalendarBlank className="h-5 w-5 mr-2 text-[var(--accent)]" />
+          <CalendarBlank className="h-5.5 w-5.5 mr-2 text-[var(--accent)]" />
           Load from Template
         </Button>
       )}
 
       {/* Templates Dialog */}
       <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
-        <DialogContent className="bg-[var(--surface-2)] border-[var(--border-default)] rounded-[var(--radius-xl)]">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">Saved Templates</DialogTitle>
+        <DialogContent className="bg-[var(--surface-1)] border border-white/10 rounded-2xl w-[92vw] max-w-sm p-4 text-white">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg font-black tracking-tight text-white">Saved Templates</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {templates.map(template => (
               <Card
                 key={template.id}
-                className="cursor-pointer hover:bg-[var(--surface-3)] transition-colors bg-transparent border-0 rounded-[var(--radius-md)]"
+                className="cursor-pointer hover:bg-[var(--surface-3)] bg-[var(--surface-2)] border border-white/5 rounded-xl transition-all active:scale-[0.98]"
                 onClick={() => loadTemplate(template)}
               >
-                <CardContent className="p-3">
-                  <div className="font-medium">{template.name}</div>
-                  <div className="text-xs text-[var(--text-tertiary)] mt-1">
+                <CardContent className="p-3.5">
+                  <div className="font-bold text-white text-sm">{template.name}</div>
+                  <div className="text-[11px] text-[var(--text-tertiary)] mt-1 font-semibold leading-relaxed">
                     {template.description || 'Custom template'}
                   </div>
-                  <div className="text-xs text-[var(--text-disabled)] mt-2">
+                  <div className="text-[10px] text-[var(--accent)] font-bold uppercase tracking-wider mt-3">
                     {template.exercises?.length || 0} training days
                   </div>
                 </CardContent>
@@ -458,28 +536,30 @@ export default function WorkoutLiveClient({ exercises, previousData, userId, tem
       {/* Add Exercise */}
       <Dialog open={showExercisePicker} onOpenChange={setShowExercisePicker}>
         <DialogTrigger>
-          <Button variant="outline" className="w-full h-14 border-dashed border-[var(--border-default)] bg-transparent text-[var(--text-tertiary)] rounded-[var(--radius-lg)]">
-            <Plus className="h-5 w-5 mr-2" />
-            添加动作
+          <Button variant="outline" className="w-full h-14 border-2 border-dashed border-white/5 bg-transparent text-[var(--text-secondary)] font-bold hover:bg-[var(--surface-1)] rounded-2xl active:scale-98 transition-all">
+            <Plus weight="bold" className="h-5.5 w-5.5 mr-2 text-[var(--accent)]" />
+            Add Exercise
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-[var(--surface-2)] border-[var(--border-default)] rounded-[var(--radius-xl)]">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold">选择动作</DialogTitle>
+        <DialogContent className="bg-[var(--surface-1)] border border-white/10 rounded-2xl w-[92vw] max-w-sm p-4 text-white">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg font-black tracking-tight text-white">Select Exercise</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
             {exercises.map(exercise => (
               <Card
                 key={exercise.id}
-                className="cursor-pointer hover:bg-[var(--surface-3)] transition-colors bg-transparent border-0 rounded-[var(--radius-md)]"
+                className="cursor-pointer hover:bg-[var(--surface-3)] bg-[var(--surface-2)] border border-white/5 rounded-xl transition-all active:scale-[0.98]"
                 onClick={() => addExercise(exercise)}
               >
-                <CardContent className="p-3 flex items-center justify-between">
+                <CardContent className="p-3.5 flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-medium">{exercise.name}</div>
-                    <div className="text-xs text-[var(--text-tertiary)]">{exercise.muscle_group}</div>
+                    <div className="text-sm font-bold text-white">{exercise.name}</div>
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">{exercise.muscle_group}</div>
                   </div>
-                  <Plus className="h-4 w-4 text-[var(--text-disabled)]" />
+                  <div className="h-7 w-7 rounded-lg bg-[var(--surface-3)] border border-white/5 flex items-center justify-center">
+                    <Plus className="h-4.5 w-4.5 text-[var(--accent)]" />
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -490,12 +570,12 @@ export default function WorkoutLiveClient({ exercises, previousData, userId, tem
       {/* Finish */}
       {exerciseBlocks.length > 0 && (
         <Button 
-          className="w-full h-12 text-sm font-medium rounded-[var(--radius-lg)]"
+          className="w-full h-14 text-sm font-bold tracking-wider uppercase rounded-2xl bg-gradient-to-r from-[var(--accent)] to-[var(--accent)]/90 hover:from-[var(--accent-hover)] text-white shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-98 transition-transform mt-6 border border-white/10"
           onClick={finishWorkout}
           disabled={saving}
         >
-          <FloppyDisk className="h-4 w-4 mr-2" />
-          {saving ? '保存中...' : '完成训练'}
+          <FloppyDisk weight="fill" className="h-5 w-5 mr-2" />
+          {saving ? 'Saving...' : 'Finish Session'}
         </Button>
       )}
     </div>
