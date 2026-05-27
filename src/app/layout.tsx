@@ -1,16 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/navigation";
 
-const inter = Inter({
+const geistSans = Geist({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
-  axes: ["opsz"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-geist-mono",
@@ -18,12 +17,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "FlexiLog - AI 健身记录",
+    default: "FlexiLog",
     template: "%s | FlexiLog",
   },
-  description: "集传统健身记录与AI智能教练于一体的Web应用。极致流畅的记录体验 + 懂你的AI教练",
-  keywords: ["健身", "训练", "AI教练", "健身记录", "workout", "fitness"],
-  authors: [{ name: "FlexiLog" }],
+  description: "AI-powered fitness tracking. Log workouts, get personalized plans.",
+  keywords: ["fitness", "workout", "AI coach", "training log"],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -33,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08090a",
+  themeColor: "#0a0a0b",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -48,13 +46,9 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
-      <body className="min-h-full flex flex-col bg-background font-sans antialiased">
+      <body className="min-h-full flex flex-col bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased">
         <main className="flex-1 pb-20 md:pb-0">
           {children}
         </main>
