@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getConversations } from '@/app/actions/ai-chat'
 import AICoachClient from './ai-coach-client'
 
 export default async function AICoachPage() {
@@ -10,14 +11,12 @@ export default async function AICoachPage() {
     redirect('/login')
   }
 
-  // Fetch user profile
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  // Fetch saved plans
   const { data: plans } = await supabase
     .from('ai_plans')
     .select('*')
