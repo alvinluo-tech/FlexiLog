@@ -529,8 +529,15 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
       {/* Details Dialog */}
       {selectedExercise && (
         <Dialog open={!!selectedExercise} onOpenChange={(open) => { if (!open) setSelectedExercise(null) }}>
-          <DialogContent className="max-w-md w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 shadow-2xl">
-              <DialogHeader className="p-0 border-b border-white/5 relative">
+          <DialogContent showCloseButton={false} className="max-w-md w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 shadow-2xl">
+              {/* Custom close button - above everything */}
+              <button
+                onClick={() => setSelectedExercise(null)}
+                className="absolute top-2 right-2 z-50 h-8 w-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-black/70 transition-colors"
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
+              <DialogHeader className="p-0 border-b border-white/5 relative overflow-hidden rounded-t-2xl">
                 {(() => {
                   const demoImg = getDemoImage(selectedExercise.name)
                   if (demoImg) {
