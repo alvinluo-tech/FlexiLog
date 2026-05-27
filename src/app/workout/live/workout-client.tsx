@@ -10,7 +10,7 @@ import {
   Play, Pause, ArrowCounterClockwise, Plus, Trash, 
   Timer, CaretDown, CaretUp, Check, Barbell, FloppyDisk, CalendarBlank, Lightning
 } from '@phosphor-icons/react'
-import { createWorkoutSession, endWorkoutSession, addWorkoutSet } from '@/app/actions/workout'
+import { createWorkoutSession, endWorkoutSession, addWorkoutSet, discardWorkoutSession } from '@/app/actions/workout'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -63,10 +63,14 @@ export default function WorkoutLiveClient({
   const [timeLeft, setTimeLeft] = useState(0)
   const [showExercisePicker, setShowExercisePicker] = useState(false)
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(initialSessionStartTime)
-  const [elapsedTime, setElapsedTime] = useState(0)
+  const [elapsedTime, setElapsedTime] = useState(
+    initialSessionStartTime ? Math.floor((Date.now() - initialSessionStartTime) / 1000) : 0
+  )
   const [saving, setSaving] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [aiPlan, setAiPlan] = useState<any | null>(null)
+  const [isSessionPaused, setIsSessionPaused] = useState(false)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
   // Load AI plan from localStorage on mount if exists
   useEffect(() => {
@@ -88,6 +92,8 @@ export default function WorkoutLiveClient({
     if (result.data) {
       setSessionId(result.data.id)
       setSessionStartTime(Date.now())
+      setElapsedTime(0)
+      setIsSessionPaused(false)
       setExerciseBlocks([])
     }
     setSaving(false)
@@ -101,6 +107,8 @@ export default function WorkoutLiveClient({
       if (result.data) {
         setSessionId(result.data.id)
         setSessionStartTime(Date.now())
+        setElapsedTime(0)
+        setIsSessionPaused(false)
         
         const plan = template.exercises
         if (plan && plan.length > 0) {
@@ -163,6 +171,8 @@ export default function WorkoutLiveClient({
       if (result.data) {
         setSessionId(result.data.id)
         setSessionStartTime(Date.now())
+        setElapsedTime(0)
+        setIsSessionPaused(false)
         
         if (aiPlan.days && aiPlan.days.length > 0) {
           const today = new Date().getDay()
@@ -217,14 +227,48 @@ export default function WorkoutLiveClient({
     }
   }
 
-  // Session timer
+  // Session timer (Pauseable)
   useEffect(() => {
-    if (!sessionStartTime) return
+    if (!sessionStartTime || isSessionPaused || saving) return
     const timer = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - sessionStartTime) / 1000))
+      setElapsedTime(prev => prev + 1)
     }, 1000)
     return () => clearInterval(timer)
-  }, [sessionStartTime])
+  }, [sessionStartTime, isSessionPaused, saving])
+
+  const formatSessionTime = useCallback((totalSeconds: number) => {
+    const hrs = Math.floor(totalSeconds / 3600)
+    const mins = Math.floor((totalSeconds % 3600) / 60)
+    const secs = totalSeconds % 60
+    
+    const pad = (num: number) => num.toString().padStart(2, '0')
+    if (hrs > 0) {
+      return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`
+    }
+    return `${pad(mins)}:${pad(secs)}`
+  }, [])
+
+  const handleDiscardWorkout = async () => {
+    if (!sessionId) return
+    setSaving(true)
+    try {
+      const result = await discardWorkoutSession(sessionId)
+      if (result.success) {
+        setSessionId(null)
+        setSessionStartTime(null)
+        setExerciseBlocks([])
+        setIsSessionPaused(false)
+        router.push('/dashboard')
+      } else {
+        console.error('Discard failed:', result.error)
+      }
+    } catch (e) {
+      console.error('Failed to discard workout:', e)
+    } finally {
+      setSaving(false)
+      setShowDiscardConfirm(false)
+    }
+  }
 
   // Rest timer
   useEffect(() => {
@@ -506,22 +550,116 @@ export default function WorkoutLiveClient({
 
   return (
     <div className="max-w-md mx-auto p-4 pb-32 space-y-4 w-full overflow-hidden min-h-[100dvh]">
-      {/* Header */}
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
-            Active Session
-          </h1>
-          <p className="text-xs text-[var(--text-tertiary)] mt-1 font-semibold">
-            Time: <span className="data-number text-[var(--text-secondary)]">{formatTime(elapsedTime)}</span> | Completed: <span className="data-number text-[var(--text-secondary)]">{completedSets}/{totalSets}</span> sets
-          </p>
-        </div>
-        <Badge variant={isTimerRunning ? 'default' : 'secondary'} className="text-sm px-3.5 py-1.5 gap-1.5 data-number bg-[var(--surface-2)] border border-white/5 rounded-full text-white shadow-md">
-          <Timer weight="bold" className="h-4 w-4 text-[var(--accent)]" />
-          {formatTime(timeLeft)}
-        </Badge>
-      </div>
+      {/* Premium Workout Session Control Console */}
+      <Card className="bg-gradient-to-br from-[var(--surface-1)] to-[var(--surface-2)] border-[var(--border-default)] rounded-2xl shadow-xl overflow-hidden relative border border-white/5">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--accent)]/5 rounded-full blur-xl pointer-events-none" />
+        <CardContent className="p-4.5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full shrink-0 ${isSessionPaused ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500 animate-ping'}`} />
+              <p className="text-[11px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+                {isSessionPaused ? 'Workout Paused' : 'Workout In Progress'}
+              </p>
+            </div>
+            
+            {/* Rest Timer Small Badge */}
+            {timeLeft > 0 && (
+              <Badge variant="outline" className="text-[10px] font-extrabold uppercase px-2 py-0.5 border-emerald-500/20 bg-emerald-500/10 text-emerald-400 gap-1 rounded-md animate-pulse">
+                <Timer className="h-3 w-3" />
+                Rest: {formatTime(timeLeft)}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-baseline justify-between">
+            {/* Session Timer Readout */}
+            <div>
+              <p className="text-3xl font-black tracking-tight text-white data-number leading-none">
+                {formatSessionTime(elapsedTime)}
+              </p>
+              <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5 font-bold uppercase tracking-wider">
+                Total Duration
+              </p>
+            </div>
+
+            {/* Set Progression */}
+            <div className="text-right">
+              <p className="text-lg font-black text-white data-number leading-none">
+                {completedSets} / {totalSets}
+              </p>
+              <p className="text-[10px] text-[var(--text-tertiary)] mt-1.5 font-bold uppercase tracking-wider">
+                Sets Completed
+              </p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          {totalSets > 0 && (
+            <div className="h-1 bg-[var(--surface-3)] w-full rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-[var(--accent)] to-blue-400 transition-all duration-300 rounded-full"
+                style={{ width: `${(completedSets / totalSets) * 100}%` }}
+              />
+            </div>
+          )}
+
+          {/* Action Row */}
+          <div className="grid grid-cols-4 gap-2 pt-1">
+            {/* Pause/Resume button */}
+            <Button
+              variant={isSessionPaused ? "default" : "outline"}
+              onClick={() => setIsSessionPaused(!isSessionPaused)}
+              className={`h-11 rounded-xl text-xs font-bold gap-1.5 border border-white/5 active:scale-95 transition-all ${
+                isSessionPaused 
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-0' 
+                  : 'bg-[var(--surface-3)] text-white hover:bg-[var(--surface-3)]/80'
+              }`}
+            >
+              {isSessionPaused ? (
+                <>
+                  <Play weight="fill" className="h-4 w-4 shrink-0" />
+                  Resume
+                </>
+              ) : (
+                <>
+                  <Pause weight="fill" className="h-4 w-4 shrink-0" />
+                  Pause
+                </>
+              )}
+            </Button>
+
+            {/* Add Exercise */}
+            <Button
+              variant="outline"
+              onClick={() => setShowExercisePicker(true)}
+              className="h-11 rounded-xl text-xs font-bold gap-1.5 bg-[var(--surface-3)] text-white hover:bg-[var(--surface-3)]/80 border border-white/5 active:scale-95 transition-all"
+            >
+              <Plus weight="bold" className="h-4 w-4 shrink-0" />
+              Add Ex
+            </Button>
+
+            {/* Finish Workout */}
+            <Button
+              onClick={finishWorkout}
+              disabled={saving || totalSets === 0}
+              className="h-11 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-[var(--accent)] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md active:scale-95 transition-all"
+            >
+              <Check weight="bold" className="h-4 w-4 shrink-0" />
+              Finish
+            </Button>
+
+            {/* Discard Workout */}
+            <Button
+              variant="outline"
+              onClick={() => setShowDiscardConfirm(true)}
+              className="h-11 rounded-xl text-xs font-bold gap-1.5 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all"
+            >
+              <Trash weight="bold" className="h-4 w-4 shrink-0" />
+              Discard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Rest Timer */}
       <AnimatePresence>
@@ -803,6 +941,34 @@ export default function WorkoutLiveClient({
           {saving ? 'Saving...' : 'Finish Session'}
         </Button>
       )}
+
+      {/* Discard Confirmation Dialog */}
+      <Dialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+        <DialogContent className="bg-[var(--surface-1)] border border-white/10 rounded-2xl w-[92vw] max-w-sm p-5 text-white">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg font-black tracking-tight text-white">Discard Workout?</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-[var(--text-secondary)] font-medium leading-relaxed mb-4">
+            Are you sure you want to cancel this workout session? All logged exercises and completed sets will be permanently deleted. This action cannot be undone.
+          </p>
+          <div className="flex gap-2.5">
+            <Button 
+              variant="outline" 
+              className="flex-1 h-11 bg-[var(--surface-3)] border-white/5 text-white font-bold rounded-xl"
+              onClick={() => setShowDiscardConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="flex-1 h-11 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl"
+              onClick={handleDiscardWorkout}
+              disabled={saving}
+            >
+              {saving ? 'Discarding...' : 'Discard Session'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

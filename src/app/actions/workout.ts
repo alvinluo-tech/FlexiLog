@@ -47,6 +47,30 @@ export async function endWorkoutSession(sessionId: string) {
   return { success: true }
 }
 
+export async function discardWorkoutSession(sessionId: string) {
+  const supabase = await createClient()
+
+  // Delete sets associated with this session first to maintain integrity
+  await supabase
+    .from('workout_sets')
+    .delete()
+    .eq('session_id', sessionId)
+
+  // Delete the session
+  const { error } = await supabase
+    .from('workout_sessions')
+    .delete()
+    .eq('id', sessionId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/workout')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function getWorkoutSessions(limit = 10) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
