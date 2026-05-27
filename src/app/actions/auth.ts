@@ -39,7 +39,7 @@ export async function signUp(formData: FormData) {
       data: {
         display_name: name,
       },
-      emailRedirectTo: siteUrl + '/auth/confirm',
+      emailRedirectTo: siteUrl + '/auth/callback',
     },
   })
 

@@ -11,7 +11,7 @@ import Link from 'next/link'
 
 function ConfirmContent() {
   const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const token = searchParams.get('token_hash') || searchParams.get('token')
   const type = searchParams.get('type')
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
