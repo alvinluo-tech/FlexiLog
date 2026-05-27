@@ -924,7 +924,7 @@ export default function WorkoutLiveClient({
         </div>
 
         {/* Start Button */}
-        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80">
+        <div className="sticky bottom-0 pt-4 pb-2 bg-gradient-to-t from-[var(--surface-0)] via-[var(--surface-0)] to-transparent">
           <Button 
             className="w-full h-14 text-lg font-bold rounded-xl gradient-accent"
             onClick={handleStartWorkout}
