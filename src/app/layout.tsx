@@ -59,7 +59,7 @@ export default async function RootLayout({
         <PWARegister />
         {user ? (
           <>
-            <Sidebar />
+            <Sidebar userName={user.user_metadata?.display_name || user.email?.split('@')[0]} />
             <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-x-hidden">
               {children}
             </main>

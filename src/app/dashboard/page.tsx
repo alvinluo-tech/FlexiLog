@@ -23,7 +23,7 @@ export default async function DashboardPage() {
       .select('*, workout_sets (*, exercises (name, muscle_group))')
       .eq('user_id', user.id)
       .order('started_at', { ascending: false })
-      .limit(5),
+      .limit(15),
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('body_weight_logs').select('*').eq('user_id', user.id).order('logged_at', { ascending: false }).limit(7),
   ])
@@ -37,6 +37,18 @@ export default async function DashboardPage() {
   const totalVolume = thisWeekSessions.reduce((sum: number, s: any) => {
     return sum + (s.workout_sets || []).reduce((s: number, set: any) => s + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
   }, 0)
+  // Calculate last week's volume for comparison
+  const lastWeekStart = new Date(weekStart)
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+  const lastWeekSessions = sessions?.filter((s: any) => {
+    const d = new Date(s.started_at)
+    return d >= lastWeekStart && d < weekStart
+  }) || []
+  const lastWeekVolume = lastWeekSessions.reduce((sum: number, s: any) => {
+    return sum + (s.workout_sets || []).reduce((s: number, set: any) => s + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
+  }, 0)
+  const volumeChange = lastWeekVolume > 0 ? ((totalVolume - lastWeekVolume) / lastWeekVolume) * 100 : 0
+
 
   const currentWeight = weightLogs?.[0]?.weight_kg || profile?.weight_kg || 0
   const prevWeight = weightLogs?.[1]?.weight_kg || currentWeight
@@ -63,7 +75,7 @@ export default async function DashboardPage() {
       : 0
     const vol = sets.reduce((sum: number, x: any) => sum + (Number(x.weight_kg) || 0) * (x.reps || 0), 0)
     const diff = Math.floor((now.getTime() - new Date(s.started_at).getTime()) / 86400000)
-    const dateStr = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff < 7 ? diff + 'd ago' : new Date(s.started_at).toLocaleDateString('en', { month: 'short', day: 'numeric' })
+    const dateStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : diff < 7 ? diff + '天前' : new Date(s.started_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
     
     return { 
       id: s.id, 
@@ -76,5 +88,5 @@ export default async function DashboardPage() {
     }
   }) || []
 
-  return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak }} recentWorkouts={recentWorkouts} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
+  return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak, volumeChange }} recentWorkouts={recentWorkouts} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
 }

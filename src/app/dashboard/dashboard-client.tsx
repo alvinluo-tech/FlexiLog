@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 
 interface Props {
-  stats: { weeklyWorkouts: number; targetWorkouts: number; totalVolume: number; currentWeight: number; weightChange: number; streak: number }
+  stats: { weeklyWorkouts: number; targetWorkouts: number; totalVolume: number; currentWeight: number; weightChange: number; streak: number; volumeChange: number }
   recentWorkouts: { id: string; name: string; date: string; exercises: number; duration: string; volume: number; isActive?: boolean }[]
   userName: string
 }
@@ -120,8 +120,8 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
           </div>
           {stats.totalVolume > 0 ? (
             <div className="flex items-center gap-1">
-              <TrendUp className="h-3.5 w-3.5 text-[var(--success)]" />
-              <span className="text-[11px] text-[var(--success)] font-bold">本周 +8.5%</span>
+              <TrendUp className={"h-3.5 w-3.5 " + (stats.volumeChange >= 0 ? "text-[var(--success)]" : "text-[var(--warning)] rotate-180")} />
+              <span className={"text-[11px] font-bold " + (stats.volumeChange >= 0 ? "text-[var(--success)]" : "text-[var(--warning)]")}>本周 {stats.volumeChange > 0 ? '+' : ''}{stats.volumeChange.toFixed(1)}%</span>
             </div>
           ) : (
             <span className="text-[11px] text-[var(--text-tertiary)] font-medium">暂无训练记录</span>

@@ -15,7 +15,7 @@ const navItems = [
   { href: '/profile', label: '我的', icon: User },
 ]
 
-export function Sidebar() {
+export function Sidebar({ userName }: { userName?: string }) {
   const pathname = usePathname()
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col border-r border-[var(--border-default)] bg-[var(--surface-1)]">
@@ -50,7 +50,7 @@ export function Sidebar() {
             <User className="h-4 w-4 text-[var(--text-tertiary)]" />
           </div>
           <div>
-            <div className="text-[14px] font-medium">User</div>
+            <div className="text-[14px] font-medium">{userName || '用户'}</div>
             <div className="text-[12px] text-[var(--text-disabled)]">v1.0.0</div>
           </div>
         </div>

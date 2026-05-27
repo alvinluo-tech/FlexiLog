@@ -110,6 +110,7 @@ ${JSON.stringify(workoutSummary, null, 2)}
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey,
       },
+      signal: AbortSignal.timeout(30000),
       body: JSON.stringify({
         model: 'mimo-v2.5-pro',
         messages: [

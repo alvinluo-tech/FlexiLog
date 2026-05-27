@@ -1,4 +1,4 @@
-export type MuscleGroup = 'chest' | 'back' | 'legs' | 'shoulders' | 'biceps' | 'triceps' | 'core' | 'full_body'
+export type MuscleGroup = 'chest' | 'back' | 'legs' | 'shoulders' | 'biceps' | 'triceps' | 'core' | 'full_body' | 'glutes' | 'forearms' | 'traps' | 'cardio'
 
 export interface Exercise {
   id: string

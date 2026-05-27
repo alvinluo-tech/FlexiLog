@@ -20,6 +20,19 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
+    // Validate conversation ownership - ensure it belongs to this user
+    if (conversationId) {
+      const { data: conversation } = await supabase
+        .from('ai_conversations')
+        .select('user_id')
+        .eq('id', conversationId)
+        .single()
+
+      if (!conversation || conversation.user_id !== user.id) {
+        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+      }
+    }
+
     // Get conversation history
     const { data: history } = await supabase
       .from('ai_messages')
@@ -85,6 +98,7 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey,
       },
+      signal: AbortSignal.timeout(30000),
       body: JSON.stringify({
         model: 'mimo-v2.5-pro',
         messages,
