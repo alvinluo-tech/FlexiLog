@@ -384,8 +384,8 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
   }
 
   return (
-    <div className="w-full min-h-[100dvh] flex flex-col bg-[var(--surface-0)]">
-      {/* Header */}
+    <div className="w-full h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
+      {/* Header - fixed */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
           <Barbell weight="fill" className="h-5.5 w-5.5 text-[var(--accent)]" />
@@ -401,7 +401,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
         </Button>
       </div>
 
-      {/* Search */}
+      {/* Search - fixed */}
       <div className="px-4 pb-3 shrink-0">
         <div className="relative">
           <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-disabled)]" />
@@ -414,11 +414,11 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
         </div>
       </div>
 
-      {/* Main: Sidebar + Content */}
+      {/* Main: Sidebar + Content - fills remaining height */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* ── Left Sidebar ── */}
-        <div className="w-[72px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar">
+        {/* ── Left Sidebar - fixed, internal scroll ── */}
+        <div className="w-[72px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar h-full">
           {/* All button */}
           <button
             onClick={() => handleGroupChange('all')}
@@ -455,8 +455,8 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
           })}
         </div>
 
-        {/* ── Right Content ── */}
-        <div className="flex-1 overflow-y-auto no-scrollbar">
+        {/* ── Right Content - scrollable ── */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* Sub-category chips */}
           {currentSubs.length > 1 && (
             <div className="flex gap-1.5 px-4 py-2.5 border-b border-white/5 overflow-x-auto no-scrollbar shrink-0">
