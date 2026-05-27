@@ -283,36 +283,38 @@ export default function WorkoutLiveClient({
   }
 
   const handleDiscardWorkout = async () => {
-    if (!sessionId) return
     setSaving(true)
     try {
-      const result = await discardWorkoutSession(sessionId)
-      if (result.success) {
-        if (sessionTimerRef.current) { clearInterval(sessionTimerRef.current); sessionTimerRef.current = null }
-        if (restTimerRef.current) { clearInterval(restTimerRef.current); restTimerRef.current = null }
-        
-        setSessionId(null)
-        setSessionStartTime(null)
-        setElapsedTime(0)
-        setExerciseBlocks([])
-        setIsRestRunning(false)
-        setRestTimeLeft(0)
-        setShowDiscardConfirm(false)
-        setWorkoutPhase('idle')
-        
-        localStorage.removeItem('active_workout_session')
-        localStorage.removeItem('ai_plan')
-        localStorage.removeItem('workout_exercises')
-        localStorage.removeItem('workout_phase')
-      } else {
-        alert('放弃失败: ' + (result.error || '未知错误'))
+      // If there's a session, delete it from database
+      if (sessionId) {
+        const result = await discardWorkoutSession(sessionId)
+        if (!result.success) {
+          console.error('Failed to delete session:', result.error)
+        }
       }
     } catch (e) {
-      alert('放弃失败: ' + (e instanceof Error ? e.message : '未知错误'))
-    } finally {
-      setSaving(false)
-      setShowDiscardConfirm(false)
+      console.error('Failed to delete session:', e)
     }
+    
+    // Always reset state regardless of API result
+    if (sessionTimerRef.current) { clearInterval(sessionTimerRef.current); sessionTimerRef.current = null }
+    if (restTimerRef.current) { clearInterval(restTimerRef.current); restTimerRef.current = null }
+    
+    setSessionId(null)
+    setSessionStartTime(null)
+    setElapsedTime(0)
+    setExerciseBlocks([])
+    setIsRestRunning(false)
+    setRestTimeLeft(0)
+    setWorkoutPhase('idle')
+    
+    localStorage.removeItem('active_workout_session')
+    localStorage.removeItem('ai_plan')
+    localStorage.removeItem('workout_exercises')
+    localStorage.removeItem('workout_phase')
+    
+    setSaving(false)
+    setShowDiscardConfirm(false)
   }
 
   const finishWorkout = useCallback(async () => {
