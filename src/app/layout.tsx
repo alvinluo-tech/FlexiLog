@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar, BottomNav } from "@/components/navigation";
 import { PWARegister } from "@/components/pwa-register";
+import { Toaster } from "@/components/ui/sonner";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
@@ -57,6 +58,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased overflow-x-hidden">
         <PWARegister />
+        <Toaster />
         {user ? (
           <>
             <Sidebar userName={user.user_metadata?.display_name || user.email?.split('@')[0]} />

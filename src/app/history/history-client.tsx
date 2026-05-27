@@ -10,6 +10,7 @@ import WeightChart from '@/components/charts/weight-chart'
 import VolumeChart from '@/components/charts/volume-chart'
 import { getHistoryPage } from '@/app/actions/history'
 import { exportWorkoutData } from '@/app/actions/export'
+import { toast } from 'sonner'
 
 interface HistoryItem {
   id: string
@@ -141,7 +142,7 @@ export default function HistoryClient({ history: initialHistory, weightChartData
     try {
       const result = await exportWorkoutData(userId)
       if (result.error) {
-        alert('导出失败: ' + result.error)
+        toast.error('导出失败', { description: result.error })
         return
       }
       const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' })
@@ -153,8 +154,9 @@ export default function HistoryClient({ history: initialHistory, weightChartData
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      toast.success('数据导出成功')
     } catch (e) {
-      alert('导出失败')
+      toast.error('导出失败')
     } finally {
       setExporting(false)
     }

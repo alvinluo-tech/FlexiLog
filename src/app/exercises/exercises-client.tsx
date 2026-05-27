@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { createCustomExercise } from '@/app/actions/exercises'
+import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 interface Exercise {
@@ -403,13 +404,14 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
     })
     setSaving(false)
     if (result.data) {
+      toast.success('自定义动作已创建')
       setShowCustom(false)
       setCustomName('')
       setCustomDesc('')
       setCustomTips('')
       router.refresh()
     } else if (result.error) {
-      alert('创建失败: ' + result.error)
+      toast.error('创建失败', { description: result.error })
     }
   }
 

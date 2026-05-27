@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Sparkle, CalendarBlank, Barbell, Clock, Target, CircleNotch, Lightning, ChatCircle, List } from '@phosphor-icons/react'
 import { savePlanAsTemplate } from '@/app/actions/templates'
+import { toast } from 'sonner'
 import AIChat from '@/components/ai-chat'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
@@ -116,14 +117,15 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
       const result = await savePlanAsTemplate(plan)
       
       if (result.error) {
-        alert('保存失败：' + result.error)
+        toast.error('保存失败', { description: result.error })
       } else {
+        toast.success('计划已保存，正在跳转...')
         localStorage.setItem('ai_plan', JSON.stringify(plan))
         router.push('/workout/live')
       }
     } catch (e) {
       console.error('Apply plan failed:', e)
-      alert('应用失败，请重试')
+      toast.error('应用失败，请重试')
     }
     setSaving(false)
   }

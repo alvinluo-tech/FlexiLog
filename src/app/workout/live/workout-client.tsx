@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { 
   Play, Plus, Trash, X,
   Timer, Check, Barbell, FloppyDisk, CalendarBlank, Lightning,
-  MagnifyingGlass, DotsThreeVertical, PencilSimple, Trophy
+  MagnifyingGlass, DotsThreeVertical, PencilSimple, Trophy, CircleNotch
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet, discardWorkoutSession, updateWorkoutSet, deleteWorkoutSet } from '@/app/actions/workout'
 import { deleteTemplate, renameTemplate } from '@/app/actions/templates'
+import { toast } from 'sonner'
 import { checkAndUpdatePRs } from '@/app/actions/records'
 import { getRecordLabel, getRecordUnit } from '@/lib/record-utils'
 import { cn } from '@/lib/utils'
@@ -75,9 +76,12 @@ export default function WorkoutLiveClient({
   const [aiPlan, setAiPlan] = useState<any | null>(null)
   const [showDayPicker, setShowDayPicker] = useState(false)
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null)
+  const [pickerPlan, setPickerPlan] = useState<any | null>(null) // Plan data for day picker (from AI or template)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [editingTemplateName, setEditingTemplateName] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
   const [workoutNotes, setWorkoutNotes] = useState('')
   
   // PR notification state
@@ -253,108 +257,58 @@ export default function WorkoutLiveClient({
     setWorkoutPhase('preparing')
   }
 
+  // Template click: single-day → load directly, multi-day → show day picker
   const handleStartTemplateWorkout = async (template: any) => {
-    setSaving(true)
-    try {
-        const plan = template.exercises
-        if (plan?.length > 0) {
-          const today = new Date().getDay()
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-          const todayPlan = plan.find((d: any) => d.day?.toLowerCase().includes(dayNames[today].toLowerCase())) || plan[0]
-          
-          if (todayPlan?.exercises) {
-            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => {
-              const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
-              return {
-                exercise: matched 
-                  ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
-                  : { id: 'template-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
-                sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
-                  const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
-                  const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
-                  const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
-                  return {
-                    id: 'set-' + Date.now() + '-' + i,
-                    weight: parseWeightFromPlan(ex),
-                    reps: repsNum,
-                    completed: false,
-                    saved: false
-                  }
-                }),
-                previousData: matched ? (previousData[matched.id] || []) : [],
-                restSeconds: matched?.rest_seconds ?? 90
-              }
-            })
-            setExerciseBlocks(newBlocks)
-            setWorkoutPhase('preparing')
-          }
-        }
-    } catch (e) {
-      console.error('Failed to load template:', e)
-    } finally {
-      setSaving(false)
+    const plan = template.exercises
+    if (!plan?.length) return
+
+    // Detect if multi-day: array of objects with 'day' or 'focus' and nested 'exercises'
+    const isMultiDay = plan.length > 1 && plan.some((d: any) => d.exercises && Array.isArray(d.exercises))
+
+    if (isMultiDay) {
+      // Open day picker for multi-day plans
+      setPickerPlan({ name: template.name, days: plan })
+      const today = new Date().getDay()
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      const todayIdx = plan.findIndex((d: any) => d.day?.toLowerCase().includes(dayNames[today]))
+      setSelectedDayIndex(todayIdx >= 0 ? todayIdx : 0)
+      setShowDayPicker(true)
+    } else {
+      // Single-day plan: load directly
+      const dayPlan = plan[0]
+      loadExercisesFromDayPlan(dayPlan)
     }
   }
 
   const handleDeleteTemplate = async (templateId: string) => {
-    const result = await deleteTemplate(templateId)
-    if (result.error) {
-      alert('删除失败: ' + result.error)
-    } else {
-      router.refresh()
+    setDeletingId(templateId)
+    try {
+      const result = await deleteTemplate(templateId)
+      if (result.error) {
+        toast.error('删除失败', { description: result.error })
+      } else {
+        toast.success('模板已删除')
+        router.refresh()
+      }
+    } finally {
+      setDeletingId(null)
     }
   }
 
   const handleRenameTemplate = async (templateId: string) => {
     if (!editingTemplateName.trim()) return
-    const result = await renameTemplate(templateId, editingTemplateName.trim())
-    if (result.error) {
-      alert('重命名失败: ' + result.error)
-    } else {
-      setEditingTemplateId(null)
-      router.refresh()
-    }
-  }
-
-  const handleStartAiWorkout = async (dayIndex: number) => {
-    if (!aiPlan || !aiPlan.days?.[dayIndex]) return
-    setSaving(true)
+    setRenamingId(templateId)
     try {
-      const dayPlan = aiPlan.days[dayIndex]
-      if (dayPlan?.exercises) {
-        const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
-          const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
-          return {
-            exercise: matched
-              ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
-              : { id: 'ai-' + ex.name, name: ex.name, muscle_group: dayPlan.focus || 'general' },
-            sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
-              const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
-              const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
-              const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
-              return {
-                id: 'set-' + Date.now() + '-' + i,
-                weight: parseWeightFromPlan(ex),
-                reps: repsNum,
-                completed: false,
-                saved: false
-              }
-            }),
-            previousData: matched ? (previousData[matched.id] || []) : [],
-            restSeconds: matched?.rest_seconds ?? 90
-          }
-        })
-        setExerciseBlocks(newBlocks)
-        setWorkoutPhase('preparing')
+      const result = await renameTemplate(templateId, editingTemplateName.trim())
+      if (result.error) {
+        toast.error('重命名失败', { description: result.error })
+      } else {
+        toast.success('重命名成功')
+        setEditingTemplateId(null)
+        router.refresh()
       }
-      
-      setShowDayPicker(false)
-      localStorage.removeItem('ai_plan')
-      setAiPlan(null)
-    } catch (e) {
-      console.error('Failed to load AI plan:', e)
     } finally {
-      setSaving(false)
+      setRenamingId(null)
     }
   }
 
@@ -436,6 +390,36 @@ export default function WorkoutLiveClient({
     }
     return ''
   }, [])
+
+  // Load exercises from a specific day plan into exercise blocks
+  const loadExercisesFromDayPlan = useCallback((dayPlan: any) => {
+    if (!dayPlan?.exercises) return false
+    const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
+      const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
+      return {
+        exercise: matched
+          ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
+          : { id: 'plan-' + ex.name, name: ex.name, muscle_group: dayPlan.focus || 'general' },
+        sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
+          const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
+          const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
+          const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
+          return {
+            id: 'set-' + Date.now() + '-' + i,
+            weight: parseWeightFromPlan(ex),
+            reps: repsNum,
+            completed: false,
+            saved: false
+          }
+        }),
+        previousData: matched ? (previousData[matched.id] || []) : [],
+        restSeconds: matched?.rest_seconds ?? 90
+      }
+    })
+    setExerciseBlocks(newBlocks)
+    setWorkoutPhase('preparing')
+    return true
+  }, [exercises, previousData, parseWeightFromPlan])
 
   // Helper: parse rep range like "8-12" and return middle value
   const parseRepRange = useCallback((repsStr: string): { display: string; middle: number } => {
@@ -610,7 +594,7 @@ export default function WorkoutLiveClient({
         setRestTimeLeft(block.restSeconds || 90)
         setIsRestRunning(true)
       } else {
-        alert('请先输入重量和次数')
+        toast.warning('请先输入重量和次数')
         return
       }
       
@@ -726,7 +710,7 @@ export default function WorkoutLiveClient({
         {aiPlan && (
           <button
             onClick={() => {
-              // Find today's day index as default
+              setPickerPlan(aiPlan)
               const today = new Date().getDay()
               const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
               const todayIdx = aiPlan.days?.findIndex((d: any) => 
@@ -777,8 +761,16 @@ export default function WorkoutLiveClient({
                         className="h-8 text-sm flex-1 bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)]"
                         autoFocus
                       />
-                      <button onClick={() => handleRenameTemplate(template.id)} className="p-1.5 text-[var(--accent)] cursor-pointer">
-                        <Check className="h-4 w-4" />
+                      <button 
+                        onClick={() => handleRenameTemplate(template.id)} 
+                        disabled={renamingId === template.id}
+                        className="p-1.5 text-[var(--accent)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {renamingId === template.id ? (
+                          <CircleNotch className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
                       </button>
                       <button onClick={() => setEditingTemplateId(null)} className="p-1.5 text-[var(--text-tertiary)] cursor-pointer">
                         <X className="h-4 w-4" />
@@ -823,10 +815,15 @@ export default function WorkoutLiveClient({
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleDeleteTemplate(template.id) }}
-                          className="w-full px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors cursor-pointer"
+                          disabled={deletingId === template.id}
+                          className="w-full px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Trash className="h-3.5 w-3.5" />
-                          删除
+                          {deletingId === template.id ? (
+                            <CircleNotch className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash className="h-3.5 w-3.5" />
+                          )}
+                          {deletingId === template.id ? '删除中...' : '删除'}
                         </button>
                       </div>
                     </>
@@ -844,7 +841,7 @@ export default function WorkoutLiveClient({
           </div>
         )}
 
-        {/* Day Picker Dialog for AI Plan */}
+        {/* Day Picker Dialog (shared for AI plans and multi-day templates) */}
         <Dialog open={showDayPicker} onOpenChange={setShowDayPicker}>
           <DialogContent showCloseButton={false} className="max-w-sm w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl">
             <div className="p-5 space-y-4">
@@ -858,11 +855,14 @@ export default function WorkoutLiveClient({
                 </button>
               </div>
 
+              {pickerPlan?.name && (
+                <p className="text-sm font-bold text-white">{pickerPlan.name}</p>
+              )}
               <p className="text-xs text-[var(--text-tertiary)]">选择今天要训练的内容</p>
 
               {/* Day options */}
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                {aiPlan?.days?.map((day: any, index: number) => {
+                {pickerPlan?.days?.map((day: any, index: number) => {
                   const today = new Date().getDay()
                   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
                   const isToday = day.day?.toLowerCase().includes(dayNames[today])
@@ -908,18 +908,21 @@ export default function WorkoutLiveClient({
               {/* Confirm button */}
               <Button
                 onClick={() => {
-                  if (selectedDayIndex !== null) {
-                    handleStartAiWorkout(selectedDayIndex)
+                  if (selectedDayIndex !== null && pickerPlan?.days?.[selectedDayIndex]) {
+                    loadExercisesFromDayPlan(pickerPlan.days[selectedDayIndex])
+                    setShowDayPicker(false)
+                    // Clear AI plan if it was from AI
+                    if (aiPlan && pickerPlan === aiPlan) {
+                      localStorage.removeItem('ai_plan')
+                      setAiPlan(null)
+                    }
+                    setPickerPlan(null)
                   }
                 }}
-                disabled={selectedDayIndex === null || !aiPlan?.days?.[selectedDayIndex]?.exercises?.length || saving}
+                disabled={selectedDayIndex === null || !pickerPlan?.days?.[selectedDayIndex]?.exercises?.length}
                 className="w-full h-12 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-sm transition-all disabled:opacity-40"
               >
-                {saving ? (
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                ) : (
-                  <Play weight="fill" className="h-4 w-4 mr-2" />
-                )}
+                <Play weight="fill" className="h-4 w-4 mr-2" />
                 开始训练
               </Button>
             </div>
