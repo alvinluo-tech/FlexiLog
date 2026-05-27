@@ -49,20 +49,31 @@ export async function endWorkoutSession(sessionId: string) {
 }
 
 export async function discardWorkoutSession(sessionId: string) {
-  // Use service role key to completely bypass RLS and delete successfully
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Get the authenticated user first
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  
+  if (!user) {
+    return { error: '未登录' }
+  }
 
-  // Rely on foreign key ON DELETE CASCADE to atomicly clean up sets!
+  // Use service role key to bypass RLS for delete operations
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabase = serviceRoleKey
+    ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
+    : authClient
+
+  // Delete ALL active (un-ended) sessions for this user, not just the current one.
+  // This cleans up any stale sessions from previous runs that were never properly ended.
+  // Foreign key ON DELETE CASCADE will automatically clean up related workout_sets.
   const { error } = await supabase
     .from('workout_sessions')
     .delete()
-    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .is('ended_at', null)
 
   if (error) {
-    console.error('Failed to discard session:', error)
+    console.error('Failed to discard sessions:', error)
     return { error: error.message }
   }
 
@@ -134,6 +145,22 @@ export async function updateWorkoutSet(setId: string, updates: {
   const { error } = await supabase
     .from('workout_sets')
     .update(updates)
+    .eq('id', setId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/workout')
+  return { success: true }
+}
+
+export async function deleteWorkoutSet(setId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('workout_sets')
+    .delete()
     .eq('id', setId)
 
   if (error) {
