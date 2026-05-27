@@ -68,6 +68,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
 
 只返回JSON，不要其他文字。`
 
+  console.log('Calling MiMo API:', { baseUrl, hasKey: !!apiKey })
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -92,7 +93,9 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
   })
 
   if (!response.ok) {
-    throw new Error(`MiMo API error: ${response.status}`)
+    const errorBody = await response.text()
+    console.error('MiMo API error:', response.status, errorBody)
+    throw new Error(`MiMo API error: ${response.status} - ${errorBody}`)
   }
 
   const data: MiMoResponse = await response.json()
@@ -191,7 +194,9 @@ ${JSON.stringify(workoutSummary, null, 2)}
   })
 
   if (!response.ok) {
-    throw new Error(`MiMo API error: ${response.status}`)
+    const errorBody = await response.text()
+    console.error('MiMo API error:', response.status, errorBody)
+    throw new Error(`MiMo API error: ${response.status} - ${errorBody}`)
   }
 
   const data: MiMoResponse = await response.json()
