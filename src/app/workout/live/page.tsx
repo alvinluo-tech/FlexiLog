@@ -60,7 +60,7 @@ export default async function WorkoutLivePage() {
   let initialSessionStartTime = null
   let initialExerciseBlocks: any[] = []
 
-  // Build rest_seconds lookup from exercises
+  // Build rest_seconds lookup from exercises (fallback)
   const restSecondsMap: Record<string, number> = {}
   for (const ex of exercises || []) {
     if (ex.rest_seconds) restSecondsMap[ex.id] = ex.rest_seconds
@@ -86,7 +86,8 @@ export default async function WorkoutLivePage() {
           },
           sets: [],
           previousData: previousData[exerciseId] || [],
-          restSeconds: restSecondsMap[exerciseId] || 90,
+          // Prefer rest_seconds from set (AI-specified), fallback to exercise default
+          restSeconds: set.rest_seconds || restSecondsMap[exerciseId] || 90,
           collapsed: false
         }
       }

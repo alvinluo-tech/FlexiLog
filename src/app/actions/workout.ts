@@ -115,6 +115,7 @@ export async function addWorkoutSet(sessionId: string, exerciseId: string, setDa
   weight_kg: number
   reps: number
   rpe?: number
+  rest_seconds?: number
 }) {
   // Input validation
   if (setData.weight_kg < 0) {

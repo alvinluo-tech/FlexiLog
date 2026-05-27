@@ -550,6 +550,7 @@ export default function WorkoutLiveClient({
                 set_number: setIndex + 1,
                 weight_kg: weight,
                 reps,
+                rest_seconds: block.restSeconds,
               })
               
               if (result.data) {
