@@ -254,18 +254,25 @@ export default function WorkoutLiveClient({
     try {
       const result = await discardWorkoutSession(sessionId)
       if (result.success) {
+        // Reset ALL state
         setSessionId(null)
         setSessionStartTime(null)
+        setElapsedTime(0)
         setExerciseBlocks([])
         setIsSessionPaused(false)
+        setIsTimerRunning(false)
+        setTimeLeft(0)
+        // Clear localStorage
+        localStorage.removeItem('active_workout_session')
+        localStorage.removeItem('ai_plan')
         router.push('/dashboard')
       } else {
         console.error('Discard failed:', result.error)
-        alert('放弃训练失败！这通常是因为 Supabase 数据库尚未配置 DELETE 权限。请确保您已在 Supabase SQL Editor 中运行了我们为您提供的 SQL 脚本。\n\n错误详情: ' + (result.error || '未知错误'))
+        alert('Failed to discard workout: ' + (result.error || 'Unknown error'))
       }
     } catch (e) {
       console.error('Failed to discard workout:', e)
-      alert('放弃训练失败，网络或系统错误: ' + (e instanceof Error ? e.message : '未知错误'))
+      alert('Failed to discard workout: ' + (e instanceof Error ? e.message : 'Unknown error'))
     } finally {
       setSaving(false)
       setShowDiscardConfirm(false)
