@@ -133,7 +133,7 @@ export default function WorkoutLiveClient({
   // Session elapsed timer
   useEffect(() => {
     if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
-    if (!sessionStartTime || saving) return
+    if (!sessionStartTime) return
     
     sessionTimerRef.current = setInterval(() => {
       if (mountedRef.current) {
@@ -144,7 +144,7 @@ export default function WorkoutLiveClient({
     return () => {
       if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
     }
-  }, [sessionStartTime, saving])
+  }, [sessionStartTime])
 
   // Rest countdown timer
   useEffect(() => {
