@@ -8,12 +8,13 @@ export default async function HistoryPage() {
 
   if (!user) redirect('/login')
 
-  // Fetch all workout sessions with sets
+  // Fetch initial batch (20 sessions)
   const { data: sessions } = await supabase
     .from('workout_sessions')
     .select('*, workout_sets (*, exercises (name, muscle_group))')
     .eq('user_id', user.id)
     .order('started_at', { ascending: false })
+    .range(0, 20)
 
   // Fetch weight history
   const { data: weightLogs } = await supabase
@@ -63,11 +64,16 @@ export default async function HistoryPage() {
     volume: h.volume,
   }))
 
+  // Collect all muscle groups for filter chips
+  const allMuscleGroups = [...new Set(history.flatMap(h => h.muscleGroups))].sort()
+
   return (
     <HistoryClient 
       history={history}
       weightChartData={weightChartData}
       volumeChartData={volumeChartData}
+      allMuscleGroups={allMuscleGroups}
+      userId={user.id}
     />
   )
 }

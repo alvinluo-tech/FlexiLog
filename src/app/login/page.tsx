@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,14 +9,16 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Lightning, Envelope, Lock } from '@phosphor-icons/react'
 
-export default function LoginPage() {
+function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams()
+  const redirectPath = searchParams.get('redirect') || '/dashboard'
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
-    const result = await signIn(formData)
+    const result = await signIn(formData, redirectPath)
     if (result?.error) {
       setError(result.error)
       setLoading(false)
@@ -36,6 +39,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <form action={handleSubmit} className="space-y-4">
+          <input type="hidden" name="redirect" value={redirectPath} />
           <div className="space-y-2">
             <label className="text-[13px] text-[var(--text-secondary)] font-medium">邮箱</label>
             <div className="relative">
@@ -86,5 +90,17 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-0)]">
+        <div className="animate-spin h-8 w-8 border-2 border-[var(--text-disabled)] border-t-[var(--accent)] rounded-full" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

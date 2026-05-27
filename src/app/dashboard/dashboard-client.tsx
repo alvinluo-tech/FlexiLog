@@ -1,7 +1,7 @@
 'use client'
 
 import { Progress } from '@/components/ui/progress'
-import { Barbell, TrendUp, Lightning, ArrowRight, Target, Flame, ChartLineUp, Trophy, Medal } from '@phosphor-icons/react'
+import { Barbell, TrendUp, Lightning, ArrowRight, Target, Flame, ChartLineUp, Trophy, Medal, User, Sparkle, CheckCircle } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 
@@ -18,6 +18,8 @@ interface Props {
   recentWorkouts: { id: string; name: string; date: string; exercises: number; duration: string; volume: number; isActive?: boolean }[]
   recentPRs?: PRItem[]
   userName: string
+  isNewUser?: boolean
+  hasProfile?: boolean
 }
 
 const RECORD_TYPE_LABELS: Record<string, string> = {
@@ -50,7 +52,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
 }
 
-export default function DashboardClient({ stats, recentWorkouts, recentPRs = [], userName }: Props) {
+export default function DashboardClient({ stats, recentWorkouts, recentPRs = [], userName, isNewUser = false, hasProfile = true }: Props) {
   return (
     <motion.div 
       variants={containerVariants}
@@ -75,6 +77,78 @@ export default function DashboardClient({ stats, recentWorkouts, recentPRs = [],
           </motion.div>
         )}
       </motion.div>
+
+      {/* Onboarding Card for New Users */}
+      {isNewUser && (
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="rounded-2xl overflow-hidden border border-[var(--accent)] bg-gradient-to-br from-[var(--accent-muted)] to-[var(--surface-1)]">
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkle weight="fill" className="h-5 w-5 text-[var(--accent)]" />
+                <h2 className="text-lg font-bold text-white">开始你的健身之旅</h2>
+              </div>
+              <p className="text-sm text-[var(--text-secondary)] mb-4">完成以下步骤，开启智能训练体验</p>
+              
+              <div className="space-y-3">
+                {/* Step 1 */}
+                <Link href="/profile">
+                  <motion.div 
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-2)]/50 hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                  >
+                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${hasProfile ? 'bg-emerald-500/15' : 'bg-[var(--accent-muted)]'}`}>
+                      {hasProfile ? (
+                        <CheckCircle weight="fill" className="h-4.5 w-4.5 text-emerald-400" />
+                      ) : (
+                        <span className="text-sm font-bold text-[var(--accent)]">1</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">填写个人资料</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">身高、体重、训练目标</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-[var(--text-disabled)]" />
+                  </motion.div>
+                </Link>
+
+                {/* Step 2 */}
+                <Link href="/ai-coach">
+                  <motion.div 
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-2)]/50 hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                      <span className="text-sm font-bold text-purple-400">2</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">生成 AI 计划</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">个性化训练方案</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-[var(--text-disabled)]" />
+                  </motion.div>
+                </Link>
+
+                {/* Step 3 */}
+                <Link href="/workout/live">
+                  <motion.div 
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-2)]/50 hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-[var(--accent-muted)] flex items-center justify-center">
+                      <span className="text-sm font-bold text-[var(--accent)]">3</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">开始第一次训练</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">记录每一组数据</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-[var(--text-disabled)]" />
+                  </motion.div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Start Workout CTA */}
       <motion.div variants={itemVariants} className="mb-6">

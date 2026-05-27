@@ -98,5 +98,16 @@ export default async function DashboardPage() {
     achievedAt: pr.achieved_at,
   }))
 
-  return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak, volumeChange }} recentWorkouts={recentWorkouts} recentPRs={formattedPRs} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
+  // Determine if user is new (no completed workouts)
+  const isNewUser = !sessions || sessions.length === 0 || sessions.every((s: any) => !s.ended_at)
+  const hasProfile = !!(profile?.gender || profile?.age || profile?.height_cm || profile?.weight_kg || profile?.goal)
+
+  return <DashboardClient 
+    stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak, volumeChange }} 
+    recentWorkouts={recentWorkouts} 
+    recentPRs={formattedPRs} 
+    userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} 
+    isNewUser={isNewUser}
+    hasProfile={hasProfile}
+  />
 }

@@ -150,6 +150,27 @@ export default function WorkoutLiveClient({
     }
   }, [workoutNotes])
 
+  // Navigation warning - prevent accidental tab/browser close during active workout
+  useEffect(() => {
+    const isActive = workoutPhase === 'active' || workoutPhase === 'preparing'
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isActive) {
+        e.preventDefault()
+        e.returnValue = '训练正在进行中，确定要离开吗？数据可能丢失。'
+        return e.returnValue
+      }
+    }
+
+    if (isActive) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [workoutPhase])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
