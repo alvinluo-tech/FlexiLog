@@ -116,13 +116,28 @@ export default function WorkoutLiveClient({
       try { setAiPlan(JSON.parse(savedPlan)) } catch {}
     }
     
-    // Restore exercise blocks if returning to page
+    // Restore exercise blocks if returning to page (preparing phase: no server data)
     const savedBlocks = localStorage.getItem('workout_exercises')
     if (savedBlocks && exerciseBlocks.length === 0) {
       try {
         const blocks = JSON.parse(savedBlocks)
         if (blocks.length > 0) {
           setExerciseBlocks(blocks.map((b: any) => ({ ...b, restSeconds: b.restSeconds ?? 90 })))
+        }
+      } catch {}
+    } else if (savedBlocks && exerciseBlocks.length > 0) {
+      // Active phase: merge restSeconds from localStorage (user may have adjusted via +/- buttons)
+      try {
+        const blocks = JSON.parse(savedBlocks)
+        const restMap: Record<string, number> = {}
+        for (const b of blocks) {
+          if (b.exercise?.id && b.restSeconds) restMap[b.exercise.id] = b.restSeconds
+        }
+        if (Object.keys(restMap).length > 0) {
+          setExerciseBlocks(prev => prev.map(b => ({
+            ...b,
+            restSeconds: restMap[b.exercise.id] ?? b.restSeconds
+          })))
         }
       } catch {}
     }

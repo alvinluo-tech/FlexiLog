@@ -22,6 +22,7 @@ interface Exercise {
   muscle_group: string
   description: string | null
   tips: string | null
+  rest_seconds?: number | null
   is_custom: boolean
 }
 
@@ -577,7 +578,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
                   const meta = getExerciseMeta(selectedExercise.name, selectedExercise.muscle_group)
                   return (
                     <>
-                      <div className="grid grid-cols-3 gap-2.5">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div className="bg-[var(--surface-2)]/60 border border-white/5 rounded-xl p-3 text-center">
                           <p className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wider">推荐器械</p>
                           <p className="text-sm font-extrabold text-white mt-0.5">{meta.equipment}</p>
@@ -589,6 +590,10 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
                         <div className="bg-[var(--surface-2)]/60 border border-white/5 rounded-xl p-3 text-center">
                           <p className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wider">辅助肌群</p>
                           <p className="text-sm font-extrabold text-white mt-0.5 truncate">{meta.secondary[0] || '无'}</p>
+                        </div>
+                        <div className="bg-[var(--surface-2)]/60 border border-white/5 rounded-xl p-3 text-center">
+                          <p className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wider">组间休息</p>
+                          <p className="text-sm font-extrabold text-white mt-0.5">{selectedExercise.rest_seconds || 90}s</p>
                         </div>
                       </div>
 
@@ -825,6 +830,7 @@ function ExerciseList({ exercises, onSelect, usageCounts }: { exercises: Exercis
                     </h4>
                     <p className="text-[9px] text-[var(--text-disabled)] font-medium mt-0.5 truncate">
                       {muscleGroups.find(g => g.value === exercise.muscle_group)?.label || exercise.muscle_group}
+                      {exercise.rest_seconds && <span className="ml-1.5 text-[var(--text-tertiary)]">· {exercise.rest_seconds}s</span>}
                     </p>
                   </div>
                 </Card>
