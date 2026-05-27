@@ -358,7 +358,7 @@ function getSubCategory(name: string, muscleGroup: string): string {
   return 'all'
 }
 
-export default function ExercisesClient({ exercises }: { exercises: Exercise[] }) {
+export default function ExercisesClient({ exercises, usageCounts = {} }: { exercises: Exercise[]; usageCounts?: Record<string, number> }) {
   const [search, setSearch] = useState('')
   const [selectedGroup, setSelectedGroup] = useState('all')
   const [selectedSub, setSelectedSub] = useState('all')
@@ -418,24 +418,22 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* ── Left Sidebar ── */}
-        <div className="w-[140px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar">
+        <div className="w-[72px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar">
           {/* All button */}
           <button
             onClick={() => handleGroupChange('all')}
             className={cn(
-              "w-full px-3 py-2.5 text-left text-xs font-bold flex items-center gap-2 transition-all border-l-2 cursor-pointer",
+              "w-full py-3 text-center text-[10px] font-bold flex flex-col items-center gap-1 transition-all border-l-2 cursor-pointer",
               selectedGroup === 'all'
                 ? "bg-white/5 border-l-white text-white"
                 : "border-l-transparent text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]"
             )}
           >
-            <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-400 shrink-0" />
             全部
-            <span className="ml-auto text-[10px] text-[var(--text-disabled)]">{exercises.length}</span>
           </button>
 
           {muscleGroups.map(group => {
-            const count = exercises.filter(e => e.muscle_group === group.value).length
             const colors = muscleGroupColors[group.value] || muscleGroupColors.all
             const isActive = selectedGroup === group.value
 
@@ -444,15 +442,14 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
                 key={group.value}
                 onClick={() => handleGroupChange(group.value)}
                 className={cn(
-                  "w-full px-3 py-2.5 text-left text-xs font-bold flex items-center gap-2 transition-all border-l-2 cursor-pointer",
+                  "w-full py-3 text-center text-[10px] font-bold flex flex-col items-center gap-1 transition-all border-l-2 cursor-pointer",
                   isActive
                     ? "bg-white/5 border-l-white text-white"
                     : "border-l-transparent text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]"
                 )}
               >
-                <span className={cn("h-2 w-2 rounded-full shrink-0", colors.dot)} />
+                <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", colors.dot)} />
                 {group.label}
-                <span className="ml-auto text-[10px] text-[var(--text-disabled)]">{count}</span>
               </button>
             )
           })}
@@ -493,7 +490,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
 
           {/* Exercise grid grouped by equipment */}
           <div className="p-4 pb-32">
-            <ExerciseList exercises={filteredExercises} onSelect={setSelectedExercise} />
+            <ExerciseList exercises={filteredExercises} onSelect={setSelectedExercise} usageCounts={usageCounts} />
           </div>
         </div>
       </div>
@@ -638,7 +635,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
   )
 }
 
-function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect: (ex: Exercise) => void }) {
+function ExerciseList({ exercises, onSelect, usageCounts }: { exercises: Exercise[]; onSelect: (ex: Exercise) => void; usageCounts: Record<string, number> }) {
   if (exercises.length === 0) {
     return (
       <div className="text-center py-16 text-[var(--text-tertiary)]">
@@ -656,7 +653,6 @@ function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect
       if (!map[eq]) map[eq] = []
       map[eq].push(ex)
     }
-    // Sort by equipmentOrder
     const result: { equipment: string; exercises: Exercise[] }[] = []
     for (const eq of equipmentOrder) {
       if (map[eq]?.length) result.push({ equipment: eq, exercises: map[eq] })
@@ -669,7 +665,7 @@ function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect
       {grouped.map(({ equipment, exercises: groupEx }) => (
         <div key={equipment}>
           {/* Equipment group header */}
-          <div className="flex items-center gap-2 mb-2.5">
+          <div className="flex items-center gap-2 mb-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text-secondary)]">{equipment}</h3>
             <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-md border", equipmentColors[equipment] || equipmentColors['其他'])}>
               {groupEx.length}
@@ -677,27 +673,43 @@ function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect
             <div className="flex-1 h-px bg-white/5" />
           </div>
 
-          {/* 2-column grid */}
-          <div className="grid grid-cols-2 gap-2">
-            {groupEx.map((exercise) => (
-              <Card
-                key={exercise.id}
-                onClick={() => onSelect(exercise)}
-                className="bg-[var(--surface-1)] border border-white/5 rounded-xl cursor-pointer active:scale-[0.97] transition-all hover:border-white/10"
-              >
-                <CardContent className="p-3 space-y-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", muscleGroupColors[exercise.muscle_group]?.dot || 'bg-gray-500')} />
+          {/* 2-column grid: image + text cards */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {groupEx.map((exercise) => {
+              const count = usageCounts[exercise.id] || 0
+              const colors = muscleGroupColors[exercise.muscle_group] || muscleGroupColors.all
+
+              return (
+                <Card
+                  key={exercise.id}
+                  onClick={() => onSelect(exercise)}
+                  className="bg-[var(--surface-1)] border border-white/5 rounded-xl cursor-pointer active:scale-[0.97] transition-all hover:border-white/10 overflow-hidden"
+                >
+                  {/* Image area */}
+                  <div className={cn("relative h-24 flex items-center justify-center", colors.bg)}>
+                    <MuscleGroupGraphic group={exercise.muscle_group} size="sm" />
+
+                    {/* Practice count badge - top right */}
+                    {count > 0 && (
+                      <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                        <Barbell weight="fill" className="h-2.5 w-2.5" />
+                        {count}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Text area */}
+                  <div className="p-2.5">
                     <h4 className="text-[11px] font-bold text-white truncate leading-tight">
                       {exercise.name}
                     </h4>
+                    <p className="text-[9px] text-[var(--text-disabled)] font-medium mt-0.5 truncate">
+                      {muscleGroups.find(g => g.value === exercise.muscle_group)?.label || exercise.muscle_group}
+                    </p>
                   </div>
-                  <p className="text-[9px] text-[var(--text-disabled)] font-medium truncate">
-                    {muscleGroups.find(g => g.value === exercise.muscle_group)?.label || exercise.muscle_group}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                </Card>
+              )
+            })}
           </div>
         </div>
       ))}
