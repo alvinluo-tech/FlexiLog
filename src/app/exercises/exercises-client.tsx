@@ -417,8 +417,8 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
       {/* Main: Sidebar + Content - fills remaining height */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* ── Left Sidebar - fixed, internal scroll ── */}
-        <div className="w-[72px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar h-full">
+        {/* ── Left Sidebar - scrollable when overflow ── */}
+        <div className="w-[72px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto min-h-0">
           {/* All button */}
           <button
             onClick={() => handleGroupChange('all')}
