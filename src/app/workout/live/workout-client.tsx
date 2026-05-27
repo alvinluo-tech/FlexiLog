@@ -72,6 +72,8 @@ export default function WorkoutLiveClient({
   const [saving, setSaving] = useState(false)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const [aiPlan, setAiPlan] = useState<any | null>(null)
+  const [showDayPicker, setShowDayPicker] = useState(false)
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [editingTemplateName, setEditingTemplateName] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -313,8 +315,8 @@ export default function WorkoutLiveClient({
     }
   }
 
-  const handleStartAiWorkout = async () => {
-    if (!aiPlan) return
+  const handleStartAiWorkout = async (dayIndex: number) => {
+    if (!aiPlan || !aiPlan.days?.[dayIndex]) return
     setSaving(true)
     try {
       const result = await createWorkoutSession()
@@ -323,38 +325,34 @@ export default function WorkoutLiveClient({
         setSessionStartTime(Date.now())
         setElapsedTime(0)
         
-        if (aiPlan.days?.length > 0) {
-          const today = new Date().getDay()
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-          const todayPlan = aiPlan.days.find((d: any) => d.day?.toLowerCase().includes(dayNames[today].toLowerCase())) || aiPlan.days[0]
-          
-          if (todayPlan?.exercises) {
-            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => {
-              const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
-              return {
-                exercise: matched
-                  ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
-                  : { id: 'ai-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
-                sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
-                  const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
-                  const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
-                  const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
-                  return {
-                    id: 'set-' + Date.now() + '-' + i,
-                    weight: parseWeightFromPlan(ex),
-                    reps: repsNum,
-                    completed: false,
-                    saved: false
-                  }
-                }),
-                previousData: matched ? (previousData[matched.id] || []) : [],
-                restSeconds: matched?.rest_seconds ?? 90
-              }
-            })
-            setExerciseBlocks(newBlocks)
-          }
+        const dayPlan = aiPlan.days[dayIndex]
+        if (dayPlan?.exercises) {
+          const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
+            const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
+            return {
+              exercise: matched
+                ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
+                : { id: 'ai-' + ex.name, name: ex.name, muscle_group: dayPlan.focus || 'general' },
+              sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
+                const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
+                const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
+                const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
+                return {
+                  id: 'set-' + Date.now() + '-' + i,
+                  weight: parseWeightFromPlan(ex),
+                  reps: repsNum,
+                  completed: false,
+                  saved: false
+                }
+              }),
+              previousData: matched ? (previousData[matched.id] || []) : [],
+              restSeconds: matched?.rest_seconds ?? 90
+            }
+          })
+          setExerciseBlocks(newBlocks)
         }
         
+        setShowDayPicker(false)
         localStorage.removeItem('ai_plan')
         setAiPlan(null)
       }
@@ -732,7 +730,16 @@ export default function WorkoutLiveClient({
         {/* AI Plan */}
         {aiPlan && (
           <button
-            onClick={handleStartAiWorkout}
+            onClick={() => {
+              // Find today's day index as default
+              const today = new Date().getDay()
+              const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+              const todayIdx = aiPlan.days?.findIndex((d: any) => 
+                d.day?.toLowerCase().includes(dayNames[today])
+              ) ?? -1
+              setSelectedDayIndex(todayIdx >= 0 ? todayIdx : 0)
+              setShowDayPicker(true)
+            }}
             disabled={saving}
             className="w-full border border-purple-500/25 rounded-2xl p-4 bg-purple-500/5 text-left active:scale-[0.98] transition-transform"
           >
@@ -744,6 +751,7 @@ export default function WorkoutLiveClient({
                 <div>
                   <p className="text-sm font-bold text-purple-300">AI 计划就绪</p>
                   <p className="text-white font-bold text-[15px]">{aiPlan.name || 'AI 健身计划'}</p>
+                  <p className="text-[11px] text-[var(--text-disabled)] mt-0.5">点击选择训练日</p>
                 </div>
               </div>
               <Play weight="fill" className="h-4 w-4 text-purple-400" />
@@ -840,6 +848,88 @@ export default function WorkoutLiveClient({
             <p className="text-[11px] text-[var(--text-disabled)] mt-1">在 AI 教练中生成计划，或手动创建模板</p>
           </div>
         )}
+
+        {/* Day Picker Dialog for AI Plan */}
+        <Dialog open={showDayPicker} onOpenChange={setShowDayPicker}>
+          <DialogContent showCloseButton={false} className="max-w-sm w-[92%] bg-[var(--surface-1)] border border-white/5 rounded-2xl p-0 overflow-hidden shadow-2xl">
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <CalendarBlank weight="fill" className="h-5 w-5 text-purple-400" />
+                  选择训练日
+                </h3>
+                <button onClick={() => setShowDayPicker(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-3)] transition-colors cursor-pointer">
+                  <X className="h-4 w-4 text-[var(--text-tertiary)]" />
+                </button>
+              </div>
+
+              <p className="text-xs text-[var(--text-tertiary)]">选择今天要训练的内容</p>
+
+              {/* Day options */}
+              <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                {aiPlan?.days?.map((day: any, index: number) => {
+                  const today = new Date().getDay()
+                  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                  const isToday = day.day?.toLowerCase().includes(dayNames[today])
+                  const isSelected = selectedDayIndex === index
+                  const hasExercises = day.exercises?.length > 0
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => hasExercises && setSelectedDayIndex(index)}
+                      disabled={!hasExercises}
+                      className={cn(
+                        "w-full p-3.5 rounded-xl border text-left transition-all cursor-pointer",
+                        !hasExercises && "opacity-40 cursor-not-allowed",
+                        isSelected
+                          ? "bg-purple-500/15 border-purple-500/30"
+                          : "bg-[var(--surface-2)] border-white/5 hover:border-white/10"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-white">{day.day || `第 ${index + 1} 天`}</p>
+                            {isToday && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">今天</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
+                            {day.focus || '综合训练'} · {hasExercises ? `${day.exercises.length} 个动作` : '休息日'}
+                          </p>
+                        </div>
+                        {isSelected && hasExercises && (
+                          <div className="h-5 w-5 rounded-full bg-purple-500 flex items-center justify-center">
+                            <Check weight="bold" className="h-3 w-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Confirm button */}
+              <Button
+                onClick={() => {
+                  if (selectedDayIndex !== null) {
+                    handleStartAiWorkout(selectedDayIndex)
+                  }
+                }}
+                disabled={selectedDayIndex === null || !aiPlan?.days?.[selectedDayIndex]?.exercises?.length || saving}
+                className="w-full h-12 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-sm transition-all disabled:opacity-40"
+              >
+                {saving ? (
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                ) : (
+                  <Play weight="fill" className="h-4 w-4 mr-2" />
+                )}
+                开始训练
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }
