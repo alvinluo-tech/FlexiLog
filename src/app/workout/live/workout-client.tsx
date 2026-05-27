@@ -53,7 +53,7 @@ export default function WorkoutLiveClient({ exercises, previousData, userId }: W
   const [elapsedTime, setElapsedTime] = useState(0)
   const [saving, setSaving] = useState(false)
 
-  // Start session on mount
+  // Start session on mount and load AI plan if exists
   useEffect(() => {
     async function startSession() {
       const result = await createWorkoutSession()
@@ -62,6 +62,50 @@ export default function WorkoutLiveClient({ exercises, previousData, userId }: W
       }
     }
     startSession()
+    
+    // Check for AI plan in localStorage
+    const savedPlan = localStorage.getItem('ai_plan')
+    if (savedPlan) {
+      try {
+        const plan = JSON.parse(savedPlan)
+        if (plan.days && plan.days.length > 0) {
+          // Get today's workout (use first day or match by day of week)
+          const today = new Date().getDay()
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+          const todayName = dayNames[today]
+          
+          // Find matching day or use first day
+          const todayPlan = plan.days.find((d: any) => 
+            d.day?.toLowerCase().includes(todayName.toLowerCase())
+          ) || plan.days[0]
+          
+          if (todayPlan?.exercises) {
+            const newBlocks: ExerciseBlock[] = todayPlan.exercises.map((ex: any) => ({
+              exercise: {
+                id: 'ai-' + ex.name,
+                name: ex.name,
+                muscle_group: todayPlan.focus || 'general'
+              },
+              sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
+                id: 'set-' + Date.now() + '-' + i,
+                weight: '',
+                reps: '',
+                rpe: '',
+                completed: false,
+                saved: false
+              })),
+              previousData: [],
+              collapsed: false
+            }))
+            setExerciseBlocks(newBlocks)
+          }
+        }
+        // Clear the plan from localStorage after loading
+        localStorage.removeItem('ai_plan')
+      } catch (e) {
+        console.error('Failed to load AI plan:', e)
+      }
+    }
   }, [])
 
   // Session timer

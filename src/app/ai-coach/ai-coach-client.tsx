@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,10 +24,21 @@ interface AICoachClientProps {
 }
 
 export default function AICoachClient({ profile, savedPlans }: AICoachClientProps) {
+  const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [currentPlan, setCurrentPlan] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('0')
+
+  const applyToWorkout = () => {
+    if (!displayPlan || !displayPlan.days || displayPlan.days.length === 0) return
+    
+    // Store the plan in localStorage for the workout page to use
+    localStorage.setItem('ai_plan', JSON.stringify(displayPlan))
+    
+    // Navigate to workout page
+    router.push('/workout/live')
+  }
 
   const handleGenerate = async () => {
     setIsGenerating(true)
@@ -186,7 +198,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 ))}
               </Tabs>
 
-              <Button className="w-full h-12 gap-2 rounded-[var(--radius-lg)]" size="lg">
+              <Button className="w-full h-12 gap-2 rounded-[var(--radius-lg)]" size="lg" onClick={applyToWorkout}>
                 <CalendarBlank className="h-5 w-5" />
                 应用到今日训练
               </Button>
