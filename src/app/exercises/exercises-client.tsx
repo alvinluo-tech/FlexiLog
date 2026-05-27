@@ -384,7 +384,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
   }
 
   return (
-    <div className="w-full h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
+    <div className="w-full h-[calc(100dvh-5rem)] md:h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
       {/* Header - fixed */}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
