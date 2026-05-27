@@ -1,85 +1,171 @@
-const CACHE_NAME = 'flexilog-v1'
-const STATIC_ASSETS = [
+const CACHE_NAME = 'flexilog-v2'
+const STATIC_CACHE = 'flexilog-static-v2'
+const PAGE_CACHE = 'flexilog-pages-v2'
+const API_CACHE = 'flexilog-api-v2'
+
+// Static assets to pre-cache on install
+const PRECACHE_ASSETS = [
+  '/offline.html',
+  '/manifest.json',
+  '/favicon.ico',
+]
+
+// App shell pages to pre-cache
+const PRECACHE_PAGES = [
   '/',
   '/dashboard',
   '/exercises',
   '/workout/live',
   '/ai-coach',
   '/profile',
-  '/manifest.json',
 ]
 
-// Install - cache static assets
+// Install — pre-cache static assets and app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS)
-    })
+    Promise.all([
+      caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_ASSETS)),
+      caches.open(PAGE_CACHE).then((cache) => cache.addAll(PRECACHE_PAGES)),
+    ])
   )
   self.skipWaiting()
 })
 
-// Activate - clean old caches
+// Activate — clean up old caches
 self.addEventListener('activate', (event) => {
+  const validCaches = new Set([CACHE_NAME, STATIC_CACHE, PAGE_CACHE, API_CACHE])
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => !validCaches.has(name))
           .map((name) => caches.delete(name))
       )
-    })
+    )
   )
   self.clients.claim()
 })
 
-// Fetch - network first, fallback to cache
+// Fetch — strategy depends on request type
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return
+  const { request } = event
+  if (request.method !== 'GET') return
 
-  // Skip API calls
-  if (event.request.url.includes('/api/')) return
+  const url = new URL(request.url)
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response
-        const responseClone = response.clone()
-        
-        // Cache successful responses
-        if (response.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone)
-          })
-        }
-        
-        return response
-      })
-      .catch(() => {
-        // Fallback to cache
-        return caches.match(event.request).then((response) => {
-          if (response) {
-            return response
-          }
-          // Fallback to offline page
-          if (event.request.destination === 'document') {
-            return caches.match('/')
-          }
-        })
-      })
-  )
+  // Skip cross-origin requests (e.g. Supabase CDN, Google Fonts)
+  if (url.origin !== self.location.origin) return
+
+  // API calls — network-first with short-lived cache
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(request, API_CACHE))
+    return
+  }
+
+  // Static assets (JS, CSS, images, fonts) — cache-first
+  if (isStaticAsset(url.pathname)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE))
+    return
+  }
+
+  // Navigation / page requests — network-first, offline fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstWithOfflineFallback(request))
+    return
+  }
+
+  // Everything else — stale-while-revalidate
+  event.respondWith(staleWhileRevalidate(request, PAGE_CACHE))
 })
 
-// Background sync for offline workout data
+// --- Strategies ---
+
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request)
+  if (cached) return cached
+
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(cacheName)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    return new Response('Offline', { status: 503 })
+  }
+}
+
+async function networkFirst(request, cacheName) {
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(cacheName)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    return new Response(JSON.stringify({ error: 'Offline' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+}
+
+async function networkFirstWithOfflineFallback(request) {
+  try {
+    const response = await fetch(request)
+    if (response.ok) {
+      const cache = await caches.open(PAGE_CACHE)
+      cache.put(request, response.clone())
+    }
+    return response
+  } catch {
+    const cached = await caches.match(request)
+    if (cached) return cached
+    return caches.match('/offline.html')
+  }
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName)
+  const cached = await cache.match(request)
+
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        cache.put(request, response.clone())
+      }
+      return response
+    })
+    .catch(() => cached)
+
+  return cached || fetchPromise
+}
+
+// --- Helpers ---
+
+function isStaticAsset(pathname) {
+  return /\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|avif|ico|wasm)(\?.*)?$/.test(pathname)
+}
+
+// --- Background Sync ---
+
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-workouts') {
     event.waitUntil(syncWorkoutData())
   }
 })
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
 async function syncWorkoutData() {
-  // Get pending workouts from IndexedDB
   const db = await openDB()
   const tx = db.transaction('pending-workouts', 'readonly')
   const store = tx.objectStore('pending-workouts')
@@ -87,15 +173,16 @@ async function syncWorkoutData() {
 
   for (const workout of workouts) {
     try {
-      await fetch('/api/workouts', {
+      const response = await fetch('/api/workouts/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(workout),
+        body: JSON.stringify(workout.data),
       })
-      
-      // Remove from pending after successful sync
-      const deleteTx = db.transaction('pending-workouts', 'readwrite')
-      await deleteTx.objectStore('pending-workouts').delete(workout.id)
+
+      if (response.ok) {
+        const deleteTx = db.transaction('pending-workouts', 'readwrite')
+        await deleteTx.objectStore('pending-workouts').delete(workout.id)
+      }
     } catch (error) {
       console.error('Failed to sync workout:', error)
     }
