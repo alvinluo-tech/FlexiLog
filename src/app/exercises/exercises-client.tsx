@@ -31,7 +31,11 @@ const muscleGroups = [
   { value: 'biceps', label: '二头' },
   { value: 'triceps', label: '三头' },
   { value: 'core', label: '核心' },
+  { value: 'glutes', label: '臀' },
   { value: 'full_body', label: '全身' },
+  { value: 'forearms', label: '前臂' },
+  { value: 'traps', label: '斜方' },
+  { value: 'cardio', label: '有氧' },
 ]
 
 const muscleGroupColors: Record<string, { dot: string; text: string; bg: string; border: string; activeBg: string }> = {
@@ -44,6 +48,10 @@ const muscleGroupColors: Record<string, { dot: string; text: string; bg: string;
   triceps: { dot: 'bg-teal-500', text: 'text-teal-300', bg: 'bg-teal-950/10', border: 'border-teal-500/15', activeBg: 'bg-teal-500 text-white' },
   core: { dot: 'bg-cyan-500', text: 'text-cyan-300', bg: 'bg-cyan-950/10', border: 'border-cyan-500/15', activeBg: 'bg-cyan-500 text-black' },
   full_body: { dot: 'bg-purple-500', text: 'text-purple-300', bg: 'bg-purple-950/10', border: 'border-purple-500/15', activeBg: 'bg-purple-500 text-white' },
+  glutes: { dot: 'bg-pink-500', text: 'text-pink-300', bg: 'bg-pink-950/10', border: 'border-pink-500/15', activeBg: 'bg-pink-500 text-white' },
+  forearms: { dot: 'bg-orange-500', text: 'text-orange-300', bg: 'bg-orange-950/10', border: 'border-orange-500/15', activeBg: 'bg-orange-500 text-white' },
+  traps: { dot: 'bg-lime-500', text: 'text-lime-300', bg: 'bg-lime-950/10', border: 'border-lime-500/15', activeBg: 'bg-lime-500 text-black' },
+  cardio: { dot: 'bg-red-500', text: 'text-red-300', bg: 'bg-red-950/10', border: 'border-red-500/15', activeBg: 'bg-red-500 text-white' },
 }
 
 // Custom Premium Inline SVG Anatomical Graphic System
@@ -231,6 +239,10 @@ function getExerciseMeta(name: string, muscleGroup: string) {
     else if (muscleGroup === 'triceps') secondary = ['后三角肌', '前锯肌']
     else if (muscleGroup === 'core') secondary = ['竖脊肌', '髋屈肌']
     else if (muscleGroup === 'full_body') secondary = ['全身主要肌群']
+    else if (muscleGroup === 'glutes') secondary = ['腘绳肌', '核心']
+    else if (muscleGroup === 'forearms') secondary = ['握力肌', '腕部']
+    else if (muscleGroup === 'traps') secondary = ['菱形肌', '三角肌后束']
+    else if (muscleGroup === 'cardio') secondary = ['心肺耐力', '下肢']
   }
 
   const difficultyColor = 
