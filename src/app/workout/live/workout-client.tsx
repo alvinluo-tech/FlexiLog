@@ -883,15 +883,22 @@ export default function WorkoutLiveClient({
                       </div>
                       
                       {/* Weight Input */}
-                      <Input
-                        type="number"
-                        placeholder={placeholders.weight !== '0' ? placeholders.weight : '0'}
-                        value={set.weight}
-                        onChange={(e) => updateSet(blockIndex, setIndex, 'weight', e.target.value)}
-                        onBlur={() => handleSetInputBlur(blockIndex, setIndex)}
-                        className="h-9 text-center text-sm bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)] focus-visible:ring-0 rounded-lg text-white font-bold data-number"
-                        inputMode="decimal"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          placeholder={placeholders.weight !== '0' ? placeholders.weight : '0'}
+                          value={set.weight}
+                          onChange={(e) => updateSet(blockIndex, setIndex, 'weight', e.target.value)}
+                          onBlur={() => handleSetInputBlur(blockIndex, setIndex)}
+                          className="h-9 text-center text-sm bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)] focus-visible:ring-0 rounded-lg text-white font-bold data-number"
+                          inputMode="decimal"
+                        />
+                        {!set.weight && placeholders.weight !== '0' && !block.previousData?.[setIndex] && (
+                          <div className="absolute -bottom-4 left-0 right-0 text-center">
+                            <span className="text-[9px] text-[var(--accent)]">AI推荐</span>
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Reps Input */}
                       <div className="relative">

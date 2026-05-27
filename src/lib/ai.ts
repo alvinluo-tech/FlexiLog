@@ -166,6 +166,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
           name: ex.name || '',
           sets: ex.sets || 3,
           reps: String(ex.reps || '10'),
+          weight_kg: ex.weight_kg || ex.weight || undefined,
           rest: ex.rest || '90s',
         })),
       })),
