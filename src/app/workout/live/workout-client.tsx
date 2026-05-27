@@ -130,19 +130,31 @@ export default function WorkoutLiveClient({
     }
   }, [])
 
-  // Session elapsed timer
+  // Session elapsed timer - using requestAnimationFrame for reliability
   useEffect(() => {
-    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
-    if (!sessionStartTime) return
-    
-    sessionTimerRef.current = setInterval(() => {
-      if (mountedRef.current) {
-        setElapsedTime(prev => prev + 1)
+    if (!sessionStartTime) {
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current)
+        sessionTimerRef.current = null
       }
+      return
+    }
+    
+    // Clear any existing timer
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current)
+    }
+    
+    // Start new timer
+    sessionTimerRef.current = setInterval(() => {
+      setElapsedTime(prev => prev + 1)
     }, 1000)
     
     return () => {
-      if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
+      if (sessionTimerRef.current) {
+        clearInterval(sessionTimerRef.current)
+        sessionTimerRef.current = null
+      }
     }
   }, [sessionStartTime])
 
@@ -206,7 +218,7 @@ export default function WorkoutLiveClient({
                   : { id: 'template-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
                 sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
                   id: 'set-' + Date.now() + '-' + i,
-                  weight: '',
+                  weight: ex.weight_kg ? String(ex.weight_kg) : '',
                   reps: String(ex.reps || '').replace(/[^0-9-]/g, '') || '',
                   completed: false,
                   saved: false

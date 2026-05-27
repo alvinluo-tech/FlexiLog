@@ -35,6 +35,7 @@ interface WorkoutPlan {
       name: string
       sets: number
       reps: string
+      weight_kg?: number
       rest: string
     }[]
   }[]
@@ -51,6 +52,9 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
   const prompt = `生成一个训练计划，严格按JSON格式返回，不要有其他文字。
 
 用户信息：
+- 性别: ${params.gender || '未知'}
+- 年龄: ${params.age || '未知'}岁
+- 体重: ${params.weight_kg || '未知'}kg
 - 目标: ${params.goal || '增肌'}
 - 每周${params.training_days_per_week || 5}天，每次${params.session_duration_minutes || 60}分钟
 - 器械: ${params.equipment || '商业健身房'}
@@ -61,7 +65,18 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
 2. plan_desc: 简短描述
 3. plan_duration: 持续时间
 4. training_days: 数组，每天包含day(周一到周日)、focus(训练部位)、exercises数组
-5. 每个exercise包含name(中文动作名)、sets、reps、rest
+5. 每个exercise包含：
+   - name: 中文动作名
+   - sets: 组数
+   - reps: 次数范围（如"8-12"）
+   - weight_kg: 推荐起始重量（kg），根据用户体重和健身年限给出合理建议
+   - rest: 组间休息时间
+
+重量建议原则：
+- 新手(1年以下): 体重的30-50%
+- 中级(1-3年): 体重的50-80%
+- 高级(3年以上): 体重的80-120%
+- 根据不同动作调整（深蹲/硬拉>卧推>肩推>弯举）
 
 直接返回JSON，不要markdown代码块。`
 
