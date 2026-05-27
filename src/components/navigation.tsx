@@ -9,7 +9,7 @@ const navItems = [
   { href: '/dashboard', label: '看板', icon: House },
   { href: '/exercises', label: '动作库', icon: Barbell },
   { href: '/workout/live', label: '训练', icon: ListChecks },
-  { href: '/ai-coach', label: 'AI 教练', icon: Sparkle },
+  { href: '/ai-coach', label: 'AI教练', icon: Sparkle },
   { href: '/profile', label: '我的', icon: User },
 ]
 
@@ -41,7 +41,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-colors duration-150',
+                'flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-colors duration-150',
                 isActive
                   ? 'bg-[var(--accent-muted)] text-[var(--accent)]'
                   : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'
@@ -73,13 +73,13 @@ export function Sidebar() {
   )
 }
 
-/* Mobile Bottom Nav */
+/* Mobile Bottom Nav - optimized for touch */
 export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-nav md:hidden">
-      <div className="flex justify-around items-center h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-nav md:hidden safe-bottom">
+      <div className="flex justify-around items-center h-16 px-1">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
           return (
@@ -87,7 +87,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 w-full h-full text-[10px] font-medium transition-colors duration-150 rounded-[var(--radius-md)] mx-0.5',
+                'flex flex-col items-center justify-center gap-0.5 w-full h-full text-[10px] font-medium transition-colors duration-150 rounded-[var(--radius-md)]',
                 isActive
                   ? 'text-[var(--accent)]'
                   : 'text-[var(--text-disabled)] hover:text-[var(--text-tertiary)]'
@@ -97,7 +97,7 @@ export function BottomNav() {
                 weight={isActive ? 'fill' : 'regular'}
                 className="h-5 w-5"
               />
-              <span>{item.label}</span>
+              <span className="leading-none">{item.label}</span>
             </Link>
           )
         })}
