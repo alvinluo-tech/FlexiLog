@@ -108,16 +108,22 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
   }
 
   const applyToWorkout = async () => {
-    if (!currentPlan || !currentPlan.days || currentPlan.days.length === 0) return
+    const plan = currentPlan || (savedPlans.length > 0 ? savedPlans[0].plan_data : null)
+    if (!plan || !plan.days || plan.days.length === 0) return
     
     setSaving(true)
-    const result = await savePlanAsTemplate(currentPlan)
-    
-    if (result.error) {
-      alert('保存失败：' + result.error)
-    } else {
-      localStorage.setItem('ai_plan', JSON.stringify(currentPlan))
-      router.push('/workout/live')
+    try {
+      const result = await savePlanAsTemplate(plan)
+      
+      if (result.error) {
+        alert('保存失败：' + result.error)
+      } else {
+        localStorage.setItem('ai_plan', JSON.stringify(plan))
+        router.push('/workout/live')
+      }
+    } catch (e) {
+      console.error('Apply plan failed:', e)
+      alert('应用失败，请重试')
     }
     setSaving(false)
   }
