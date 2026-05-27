@@ -261,9 +261,11 @@ export default function WorkoutLiveClient({
         router.push('/dashboard')
       } else {
         console.error('Discard failed:', result.error)
+        alert('放弃训练失败！这通常是因为 Supabase 数据库尚未配置 DELETE 权限。请确保您已在 Supabase SQL Editor 中运行了我们为您提供的 SQL 脚本。\n\n错误详情: ' + (result.error || '未知错误'))
       }
     } catch (e) {
       console.error('Failed to discard workout:', e)
+      alert('放弃训练失败，网络或系统错误: ' + (e instanceof Error ? e.message : '未知错误'))
     } finally {
       setSaving(false)
       setShowDiscardConfirm(false)
