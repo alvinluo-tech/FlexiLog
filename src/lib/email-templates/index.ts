@@ -1,0 +1,5 @@
+export { getVerificationEmailHtml } from './verification'
+export { getWelcomeEmailHtml } from './welcome'
+export { getPasswordResetEmailHtml } from './password-reset'
+export { getPasswordChangedEmailHtml } from './password-changed'
+export { getWeeklyReportEmailHtml } from './weekly-report'

@@ -1,18 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Lightning, Lock } from '@phosphor-icons/react'
+import { Lightning, Lock, CheckCircle, XCircle, Spinner } from '@phosphor-icons/react'
 import Link from 'next/link'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
+  
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [status, setStatus] = useState<'form' | 'success' | 'error'>('form')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,12 +35,27 @@ export default function ResetPasswordPage() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ password })
+    
+    if (token) {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'recovery',
+      })
+      
+      if (verifyError) {
+        setError('重置链接已过期或无效')
+        setStatus('error')
+        setLoading(false)
+        return
+      }
+    }
+    
+    const { error: updateError } = await supabase.auth.updateUser({ password })
 
-    if (error) {
-      setError(error.message)
+    if (updateError) {
+      setError(updateError.message)
     } else {
-      setSuccess(true)
+      setStatus('success')
     }
     setLoading(false)
   }
@@ -54,19 +73,12 @@ export default function ResetPasswordPage() {
 
         <Card className="card-surface border rounded-[var(--radius-xl)]">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">设置新密码</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              {status === 'form' ? '设置新密码' : ''}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {success ? (
-              <div className="text-center space-y-4">
-                <div className="text-sm text-[var(--success)] bg-[var(--success-muted)] p-3 rounded-[var(--radius-md)]">
-                  密码已重置成功！
-                </div>
-                <Link href="/login">
-                  <Button className="w-full">返回登录</Button>
-                </Link>
-              </div>
-            ) : (
+            {status === 'form' && (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm text-[var(--text-secondary)]">新密码</label>
@@ -110,9 +122,52 @@ export default function ResetPasswordPage() {
                 </Button>
               </form>
             )}
+
+            {status === 'success' && (
+              <div className="text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-[var(--success-muted)] flex items-center justify-center mx-auto">
+                  <CheckCircle weight="fill" className="h-10 w-10 text-[var(--success)]" />
+                </div>
+                <h2 className="text-lg font-semibold">密码已重置！</h2>
+                <p className="text-sm text-[var(--text-tertiary)]">你的密码已成功更改</p>
+                <Link href="/login">
+                  <Button className="w-full">返回登录</Button>
+                </Link>
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-[var(--danger-muted)] flex items-center justify-center mx-auto">
+                  <XCircle weight="fill" className="h-10 w-10 text-[var(--danger)]" />
+                </div>
+                <h2 className="text-lg font-semibold">重置失败</h2>
+                <p className="text-sm text-[var(--text-tertiary)]">{error}</p>
+                <div className="space-y-2">
+                  <Link href="/forgot-password">
+                    <Button variant="outline" className="w-full">重新申请</Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button className="w-full">返回登录</Button>
+                  </Link>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[var(--surface-0)]">
+        <Spinner className="h-8 w-8 text-[var(--accent)] animate-spin" />
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
