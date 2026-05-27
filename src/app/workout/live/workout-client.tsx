@@ -1030,7 +1030,7 @@ export default function WorkoutLiveClient({
                     className="h-8 px-2 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-bold active:scale-90 transition-transform hover:bg-red-500/20" 
                     onClick={() => { setRestTimeLeft(0); setIsRestRunning(false) }}
                   >
-                    跳过
+                    结束休息
                   </button>
                 </div>
               </div>
