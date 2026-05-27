@@ -6,6 +6,7 @@
 
 | Time | Agent | Action | Files Changed | Notes |
 |------|-------|--------|---------------|-------|
+| 2026-05-27 17:18 | hermes | Added workout phase management (idle/preparing/active/completed) with manual Start button and localStorage persistence | `src/app/workout/live/workout-client.tsx` | Fixes ghost timer issue and template data loss on page navigation |
 | 2026-05-27 16:45 | hermes | Fixed ghost timer bug - added useRef cleanup for session/rest timers, force clear on discard | `src/app/workout/live/workout-client.tsx` | Timers were persisting after discarding workout due to missing interval cleanup on unmount |
 | 2026-05-27 17:00 | hermes | Completed all remaining features: charts, history, social, AI extensions | Multiple files | Added WeightChart, VolumeChart, /history page, /feed page, social actions, /api/ai-extended |
 | 2026-05-27 17:10 | hermes | Cleaned up merged branches | Git branches | Deleted feat/ui-redesign-v2 and feat/ai-coach-chat-v2 (both merged to main) |
