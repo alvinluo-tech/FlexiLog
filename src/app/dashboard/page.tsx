@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { ensureUserProfile } from '@/app/actions/auth'
 import DashboardClient from './dashboard-client'
 
 export default async function DashboardPage() {
@@ -9,6 +10,9 @@ export default async function DashboardPage() {
   if (!user) {
     redirect('/login')
   }
+
+  // Ensure user profile exists
+  await ensureUserProfile(user.id)
 
   // Fetch real data in parallel
   const [
@@ -47,11 +51,11 @@ export default async function DashboardPage() {
   weekStart.setDate(now.getDate() - now.getDay())
   weekStart.setHours(0, 0, 0, 0)
 
-  const thisWeekSessions = sessions?.filter(s => 
+  const thisWeekSessions = sessions?.filter((s: any) => 
     new Date(s.started_at) >= weekStart
   ) || []
 
-  const totalVolume = thisWeekSessions.reduce((sum, session) => {
+  const totalVolume = thisWeekSessions.reduce((sum: number, session: any) => {
     const sessionVolume = (session.workout_sets || []).reduce((s: number, set: any) => 
       s + (Number(set.weight_kg) || 0) * (set.reps || 0), 0
     )
@@ -72,7 +76,7 @@ export default async function DashboardPage() {
       const checkDate = new Date(today)
       checkDate.setDate(today.getDate() - i)
       
-      const hasWorkout = sessions.some(s => {
+      const hasWorkout = sessions.some((s: any) => {
         const workoutDate = new Date(s.started_at)
         workoutDate.setHours(0, 0, 0, 0)
         return workoutDate.getTime() === checkDate.getTime()
@@ -95,7 +99,7 @@ export default async function DashboardPage() {
     streak,
   }
 
-  const recentWorkouts = sessions?.map(session => {
+  const recentWorkouts = sessions?.map((session: any) => {
     const sets = session.workout_sets || []
     const exerciseNames = [...new Set(sets.map((s: any) => s.exercises?.name).filter(Boolean))]
     const duration = session.ended_at

@@ -44,8 +44,9 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
-  // Create user profile
-  if (data.user) {
+  // If user is created and confirmed (email confirmation disabled)
+  if (data.user && data.session) {
+    // Create user profile using the authenticated session
     await supabase.from('user_profiles').upsert({
       id: data.user.id,
       gender: null,
@@ -60,6 +61,14 @@ export async function signUp(formData: FormData) {
       session_duration_minutes: null,
       equipment: null,
     })
+    
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
+  }
+  
+  // If email confirmation is required
+  if (data.user && !data.session) {
+    return { success: '请检查邮箱确认注册链接' }
   }
 
   revalidatePath('/', 'layout')
@@ -77,4 +86,33 @@ export async function getUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user
+}
+
+export async function ensureUserProfile(userId: string) {
+  const supabase = await createClient()
+  
+  // Check if profile exists
+  const { data: existing } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('id', userId)
+    .single()
+  
+  if (!existing) {
+    // Create profile if it doesn't exist
+    await supabase.from('user_profiles').upsert({
+      id: userId,
+      gender: null,
+      age: null,
+      height_cm: null,
+      weight_kg: null,
+      body_fat_percentage: null,
+      fitness_years: null,
+      injuries: null,
+      goal: null,
+      training_days_per_week: null,
+      session_duration_minutes: null,
+      equipment: null,
+    })
+  }
 }
