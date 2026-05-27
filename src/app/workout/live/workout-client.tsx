@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,6 +71,9 @@ export default function WorkoutLiveClient({
   const [aiPlan, setAiPlan] = useState<any | null>(null)
   const [isSessionPaused, setIsSessionPaused] = useState(false)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+  const mountedRef = useRef(true)
+  const sessionTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const restTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load AI plan from localStorage on mount if exists
   useEffect(() => {
@@ -227,13 +230,29 @@ export default function WorkoutLiveClient({
     }
   }
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false
+      if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
+      if (restTimerRef.current) clearInterval(restTimerRef.current)
+    }
+  }, [])
+
   // Session timer (Pauseable)
   useEffect(() => {
+    if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
     if (!sessionStartTime || isSessionPaused || saving) return
-    const timer = setInterval(() => {
-      setElapsedTime(prev => prev + 1)
+    
+    sessionTimerRef.current = setInterval(() => {
+      if (mountedRef.current) {
+        setElapsedTime(prev => prev + 1)
+      }
     }, 1000)
-    return () => clearInterval(timer)
+    
+    return () => {
+      if (sessionTimerRef.current) clearInterval(sessionTimerRef.current)
+    }
   }, [sessionStartTime, isSessionPaused, saving])
 
   const formatSessionTime = useCallback((totalSeconds: number) => {
@@ -254,6 +273,16 @@ export default function WorkoutLiveClient({
     try {
       const result = await discardWorkoutSession(sessionId)
       if (result.success) {
+        // Force stop all timers first
+        if (sessionTimerRef.current) {
+          clearInterval(sessionTimerRef.current)
+          sessionTimerRef.current = null
+        }
+        if (restTimerRef.current) {
+          clearInterval(restTimerRef.current)
+          restTimerRef.current = null
+        }
+        
         // Reset ALL state
         setSessionId(null)
         setSessionStartTime(null)
@@ -262,9 +291,13 @@ export default function WorkoutLiveClient({
         setIsSessionPaused(false)
         setIsTimerRunning(false)
         setTimeLeft(0)
+        
         // Clear localStorage
         localStorage.removeItem('active_workout_session')
         localStorage.removeItem('ai_plan')
+        
+        // Small delay to ensure state is reset before navigation
+        await new Promise(resolve => setTimeout(resolve, 100))
         router.push('/dashboard')
       } else {
         console.error('Discard failed:', result.error)
@@ -281,9 +314,10 @@ export default function WorkoutLiveClient({
 
   // Rest timer
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    if (restTimerRef.current) clearInterval(restTimerRef.current)
     if (isTimerRunning && timeLeft > 0) {
-      timer = setInterval(() => {
+      restTimerRef.current = setInterval(() => {
+        if (!mountedRef.current) return
         setTimeLeft(prev => {
           if (prev <= 1) {
             setIsTimerRunning(false)
@@ -293,7 +327,9 @@ export default function WorkoutLiveClient({
         })
       }, 1000)
     }
-    return () => clearInterval(timer)
+    return () => {
+      if (restTimerRef.current) clearInterval(restTimerRef.current)
+    }
   }, [isTimerRunning, timeLeft])
 
   const formatTime = useCallback((seconds: number) => {
