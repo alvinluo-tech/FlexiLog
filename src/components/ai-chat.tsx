@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PaperPlaneRight, Sparkle, User, Trash, Plus } from '@phosphor-icons/react'
 import { createConversation, getConversations, getMessages, addMessage, deleteConversation } from '@/app/actions/ai-chat'
+import { motion, AnimatePresence } from 'motion/react'
+import { cn } from '@/lib/utils'
 
 interface Message {
   id: string
@@ -22,15 +24,16 @@ interface Conversation {
 
 interface AIChatProps {
   onPlanGenerated?: (plan: any) => void
+  showSidebar: boolean
+  onToggleSidebar: () => void
 }
 
-export default function AIChat({ onPlanGenerated }: AIChatProps) {
+export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }: AIChatProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [currentConvId, setCurrentConvId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Load conversations
@@ -75,13 +78,13 @@ export default function AIChat({ onPlanGenerated }: AIChatProps) {
       setConversations(prev => [result.data!, ...prev])
       setCurrentConvId(result.data.id)
       setMessages([])
-      setShowSidebar(false)
+      onToggleSidebar() // close on selecting new
     }
   }
 
   const selectConversation = (convId: string) => {
     setCurrentConvId(convId)
-    setShowSidebar(false)
+    onToggleSidebar() // close sidebar drawer on select
   }
 
   const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
@@ -170,12 +173,32 @@ export default function AIChat({ onPlanGenerated }: AIChatProps) {
   }
 
   return (
-    <div className="flex h-[600px] bg-[var(--surface-1)] rounded-2xl overflow-hidden border border-[var(--border-default)]">
-      {/* Sidebar - Conversations List */}
-      <div className={`w-64 border-r border-[var(--border-default)] flex-col bg-[var(--surface-2)] ${showSidebar ? 'flex' : 'hidden md:flex'}`}>
-        <div className="p-3 border-b border-[var(--border-default)]">
-          <Button onClick={startNewConversation} className="w-full justify-start gap-2" variant="ghost">
-            <Plus className="h-4 w-4" />
+    <div className="flex flex-1 min-h-0 bg-[var(--surface-0)] overflow-hidden relative w-full h-full">
+      {/* Sidebar Drawer Overlay for Mobile */}
+      <AnimatePresence>
+        {showSidebar && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onToggleSidebar}
+            className="absolute inset-0 bg-black/70 z-30 backdrop-blur-xs"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Conversations Drawer Sidebar */}
+      <div className={cn(
+        "absolute inset-y-0 left-0 w-64 border-r border-white/5 flex flex-col bg-[var(--surface-2)] z-45 transition-transform duration-300",
+        showSidebar ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-3.5 border-b border-white/5">
+          <Button 
+            onClick={startNewConversation} 
+            className="w-full justify-start gap-2 h-10 border border-white/5 bg-[var(--surface-3)] text-white hover:bg-[var(--surface-4)] rounded-xl" 
+            variant="ghost"
+          >
+            <Plus weight="bold" className="h-4.5 w-4.5 text-purple-400" />
             New Chat
           </Button>
         </div>
@@ -184,66 +207,53 @@ export default function AIChat({ onPlanGenerated }: AIChatProps) {
             <div
               key={conv.id}
               onClick={() => selectConversation(conv.id)}
-              className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
-                currentConvId === conv.id ? 'bg-[var(--accent-muted)]' : 'hover:bg-[var(--surface-3)]'
-              }`}
+              className={cn(
+                "group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all active:scale-[0.98]",
+                currentConvId === conv.id 
+                  ? "bg-purple-500/10 border border-purple-500/20 text-purple-200" 
+                  : "hover:bg-[var(--surface-3)] border border-transparent"
+              )}
             >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{conv.title}</p>
-                <p className="text-xs text-[var(--text-disabled)]">
+              <div className="flex-1 min-w-0 pr-2">
+                <p className="text-xs font-bold truncate text-white">{conv.title || 'Untitled Chat'}</p>
+                <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5 font-semibold">
                   {new Date(conv.updated_at).toLocaleDateString()}
                 </p>
               </div>
               <button
                 onClick={(e) => handleDeleteConversation(conv.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:text-[var(--danger)] transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg hover:text-[var(--danger)] transition-all shrink-0"
               >
-                <Trash className="h-3 w-3" />
+                <Trash className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="p-3 border-b border-[var(--border-default)] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowSidebar(!showSidebar)} className="md:hidden p-1">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-[var(--accent-muted)] flex items-center justify-center">
-                <Sparkle className="h-4 w-4 text-[var(--accent)]" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold">AI Coach</p>
-                <p className="text-xs text-[var(--text-disabled)]">Powered by MiMo</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Main Chat Viewport */}
+      <div className="flex-1 flex flex-col bg-[var(--surface-0)] relative z-20 h-full w-full min-h-0">
+        {/* Messages list takes 100% available viewport height */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-[var(--accent-muted)] flex items-center justify-center mb-4">
-                <Sparkle className="h-8 w-8 text-[var(--accent)]" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">AI Fitness Coach</h3>
-              <p className="text-sm text-[var(--text-tertiary)] max-w-xs">
-                Ask me to create a training plan, modify your current plan, or get fitness advice.
+            <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+              <motion.div 
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                className="h-14 w-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/5"
+              >
+                <Sparkle weight="fill" className="h-7 w-7 text-purple-400" />
+              </motion.div>
+              <h3 className="text-base font-extrabold mb-1 text-white">AI Coach Assistant</h3>
+              <p className="text-xs text-[var(--text-tertiary)] max-w-[240px] leading-relaxed">
+                Describe your goals, equipment, or schedule, and I will generate a fully custom bodybuilding or fat-loss program.
               </p>
-              <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                {['Create a PPL plan', 'Modify my squat sets', 'Help me with recovery'].map(q => (
+              <div className="flex flex-col gap-2 mt-6 w-full max-w-[260px]">
+                {['Create a 3-Day Split PPL Plan', 'Help me replace squats due to knee pain', 'Generate a dumbbell-only chest routine'].map(q => (
                   <button
                     key={q}
                     onClick={() => { setInput(q); }}
-                    className="text-xs px-3 py-1.5 rounded-full bg-[var(--surface-3)] hover:bg-[var(--surface-4)] transition-colors"
+                    className="text-left text-[11px] font-bold px-3 py-2.5 rounded-xl bg-[var(--surface-1)] border border-white/5 hover:border-white/10 hover:bg-[var(--surface-2)] active:scale-[0.98] transition-all text-[var(--text-secondary)] hover:text-white truncate"
                   >
                     {q}
                   </button>
@@ -255,48 +265,50 @@ export default function AIChat({ onPlanGenerated }: AIChatProps) {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={cn("flex gap-2.5", msg.role === 'user' ? 'justify-end' : 'justify-start')}
             >
               {msg.role === 'assistant' && (
-                <div className="h-8 w-8 rounded-lg bg-[var(--accent-muted)] flex items-center justify-center flex-shrink-0">
-                  <Sparkle className="h-4 w-4 text-[var(--accent)]" />
+                <div className="h-8 w-8 rounded-lg bg-purple-500/15 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkle weight="fill" className="h-4 w-4 text-purple-400" />
                 </div>
               )}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                className={cn(
+                  "max-w-[80%] px-4 py-2.5 text-sm leading-relaxed shadow-sm",
                   msg.role === 'user'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--surface-3)]'
-                }`}
+                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-xs font-semibold shadow-md shadow-blue-500/5'
+                    : 'bg-[var(--surface-2)] border border-white/5 text-[var(--text-secondary)] rounded-2xl rounded-tl-xs'
+                )}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <p className="whitespace-pre-wrap">{msg.content}</p>
                 {msg.metadata?.plan && (
-                  <button
+                  <Button
                     onClick={() => onPlanGenerated?.(msg.metadata.plan)}
-                    className="mt-2 text-xs px-3 py-1.5 rounded-lg bg-[var(--accent-muted)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                    className="mt-3.5 w-full h-10 gap-1.5 text-xs font-bold uppercase tracking-wider bg-purple-500 hover:bg-purple-600 text-white rounded-xl active:scale-95 shadow-md shadow-purple-500/10 transition-transform"
                   >
-                    Apply This Plan
-                  </button>
+                    <Plus weight="bold" className="h-3.5 w-3.5" />
+                    Apply Routine
+                  </Button>
                 )}
               </div>
               {msg.role === 'user' && (
-                <div className="h-8 w-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center flex-shrink-0">
-                  <User className="h-4 w-4 text-[var(--text-secondary)]" />
+                <div className="h-8 w-8 rounded-lg bg-[var(--surface-2)] border border-white/5 flex items-center justify-center flex-shrink-0">
+                  <User weight="bold" className="h-4 w-4 text-[var(--text-secondary)]" />
                 </div>
               )}
             </div>
           ))}
 
           {loading && (
-            <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-lg bg-[var(--accent-muted)] flex items-center justify-center flex-shrink-0">
-                <Sparkle className="h-4 w-4 text-[var(--accent)] animate-pulse" />
+            <div className="flex gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-purple-500/15 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+                <Sparkle weight="fill" className="h-4 w-4 text-purple-400 animate-pulse" />
               </div>
-              <div className="bg-[var(--surface-3)] rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-[var(--text-disabled)] rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-[var(--text-disabled)] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                  <div className="w-2 h-2 bg-[var(--text-disabled)] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              <div className="bg-[var(--surface-2)] border border-white/5 rounded-2xl px-4 py-3.5">
+                <div className="flex gap-1.5 items-center">
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" />
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                 </div>
               </div>
             </div>
@@ -305,23 +317,26 @@ export default function AIChat({ onPlanGenerated }: AIChatProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-[var(--border-default)]">
-          <div className="flex gap-2">
+        {/* Input Bar (ChatGPT-style Floating Capsule) */}
+        <div className="p-4 border-t border-white/5 bg-[var(--surface-0)] shrink-0">
+          <div className="max-w-md mx-auto w-full relative flex items-center">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your training plan..."
+              placeholder="Ask AI Coach anything..."
               disabled={loading}
-              className="flex-1 bg-[var(--surface-2)] border-[var(--border-default)] rounded-xl"
+              className="w-full bg-[var(--surface-2)] border border-white/5 focus-visible:ring-purple-500 rounded-full h-12 pl-5 pr-14 text-sm text-white font-semibold shadow-inner"
             />
             <Button
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="rounded-xl px-4"
+              className={cn(
+                "absolute right-1.5 w-9 h-9 p-0 rounded-full active:scale-90 transition-all flex items-center justify-center shrink-0 shadow-md",
+                input.trim() ? "bg-purple-500 hover:bg-purple-600 text-white shadow-purple-500/20" : "bg-transparent text-[var(--text-disabled)]"
+              )}
             >
-              <PaperPlaneRight className="h-4 w-4" />
+              <PaperPlaneRight weight="bold" className="h-4.5 w-4.5" />
             </Button>
           </div>
         </div>

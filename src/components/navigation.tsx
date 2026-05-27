@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { House, Barbell, ListChecks, Sparkle, User, Lightning } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
+import { motion } from 'motion/react'
 
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: House },
@@ -18,8 +19,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col border-r border-[var(--border-default)] bg-[var(--surface-1)]">
       <div className="p-6 pb-8">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl gradient-accent flex items-center justify-center">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="h-10 w-10 rounded-xl gradient-accent flex items-center justify-center transition-transform group-hover:scale-105 duration-200">
             <Lightning weight="fill" className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -32,12 +33,24 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
           return (
-            <Link key={item.href} href={item.href} className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200',
-              isActive ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)]'
-            )}>
-              <item.icon weight={isActive ? 'fill' : 'regular'} className="h-5 w-5" />
-              {item.label}
+            <Link key={item.href} href={item.href} className="relative block group">
+              <div className={cn(
+                'flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200 relative z-10',
+                isActive ? 'text-white' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)]'
+              )}>
+                <item.icon weight={isActive ? 'fill' : 'regular'} className="h-5 w-5" />
+                {item.label}
+              </div>
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabSidebar"
+                  className="absolute inset-0 bg-[var(--accent)] rounded-xl"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              {!isActive && (
+                <div className="absolute inset-0 bg-[var(--surface-2)] opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-150" />
+              )}
             </Link>
           )
         })}
@@ -60,19 +73,36 @@ export function Sidebar() {
 export function BottomNav() {
   const pathname = usePathname()
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass-nav md:hidden safe-bottom">
-      <div className="flex justify-around items-center h-[72px] px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[var(--surface-1)]/90 backdrop-blur-xl border-t border-white/5 shadow-2xl safe-bottom">
+      <div className="flex justify-around items-center h-[64px] px-2">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
           return (
-            <Link key={item.href} href={item.href} className={cn(
-              'flex flex-col items-center justify-center gap-1 w-full h-full rounded-2xl transition-all duration-200',
-              isActive ? 'text-[var(--accent)]' : 'text-[var(--text-disabled)]'
-            )}>
-              <div className={cn('p-1.5 rounded-xl transition-all duration-200', isActive && 'bg-[var(--accent-muted)]')}>
-                <item.icon weight={isActive ? 'fill' : 'regular'} className="h-6 w-6" />
+            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center gap-1 w-full h-full relative group">
+              <div className="relative flex flex-col items-center justify-center w-full h-full z-10">
+                <motion.div 
+                  animate={{ scale: isActive ? 1.08 : 1 }}
+                  className={cn(
+                    'p-1 rounded-xl transition-colors duration-200', 
+                    isActive ? 'text-white' : 'text-[var(--text-disabled)]'
+                  )}
+                >
+                  <item.icon weight={isActive ? 'fill' : 'regular'} className="h-5.5 w-5.5" />
+                </motion.div>
+                <span className={cn(
+                  'text-[9px] font-bold leading-none mt-0.5 transition-colors duration-200 uppercase tracking-wider',
+                  isActive ? 'text-white font-black' : 'text-[var(--text-disabled)]'
+                )}>
+                  {item.label}
+                </span>
               </div>
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabBottom"
+                  className="absolute inset-x-2 py-6 bg-[var(--accent)]/15 border-t-2 border-[var(--accent)] rounded-lg z-0"
+                  transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                />
+              )}
             </Link>
           )
         })}
