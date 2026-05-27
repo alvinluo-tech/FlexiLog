@@ -30,6 +30,8 @@ export async function signUp(formData: FormData) {
   const password = formData.get('password') as string
   const name = formData.get('name') as string
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -37,6 +39,7 @@ export async function signUp(formData: FormData) {
       data: {
         display_name: name,
       },
+      emailRedirectTo: siteUrl + '/auth/confirm',
     },
   })
 
