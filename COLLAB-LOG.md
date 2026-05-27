@@ -16,6 +16,7 @@
 | 2026-05-27 18:35 | hermes | Fixed first set reps always 0 when applying template/AI plan | `workout-client.tsx` | Reps range like "6-8" was stored as-is but input type=number can't display it. Now parses range → middle value (7) for all sets |
 | 2026-05-27 18:40 | hermes | Unified weight field + added template management (rename/delete) | `templates.ts`, `workout-client.tsx` | 1) savePlanAsTemplate now normalizes weight_ref/weight → weight_kg (number). 2) Template cards have ⋮ menu with rename (inline edit) and delete |
 | 2026-05-27 18:50 | hermes | Full Chinese localization of entire app UI | 15+ files | Translated all English UI text to Chinese across dashboard, history, feed, login, register, auth, profile, exercises, AI coach, chat, charts, navigation |
+| 2026-05-27 19:15 | hermes | Expanded exercise database from 25 to 210 exercises, 12 muscle groups | `exercises-client.tsx` + DB migration | Added glutes/forearms/traps/cardio categories. Reference: Strong/Hevy/JEFIT exercise libraries |
 
 ## Rules
 

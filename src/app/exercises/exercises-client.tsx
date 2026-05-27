@@ -4,10 +4,9 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   MagnifyingGlass, Plus, Barbell, ArrowRight, Sparkle, 
-  Clock, Lightning, Trophy, BookOpen, Info, Target 
+  Clock, Lightning, Trophy, BookOpen, Info, Target, ChevronDown
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -262,33 +261,139 @@ const getDemoImage = (name: string) => {
   return null
 }
 
+// Equipment type detection from exercise name (Chinese)
+function getEquipmentType(name: string): string {
+  if (/壶铃/.test(name)) return '壶铃'
+  if (/杠铃|T杠|曲杠|窄握杠铃|背后杠铃/.test(name)) return '杠铃'
+  if (/哑铃/.test(name)) return '哑铃'
+  if (/绳索|龙门架|V把/.test(name)) return '绳索'
+  if (/器械|史密斯|蝴蝶机|腿屈伸|腿弯举|腿举|哈克|腿外展|腿内收|坐姿|臀外展|反向蝴蝶|握力器|楼梯机|椭圆机|划船机|单车/.test(name)) return '器械'
+  if (/俯卧撑|引体|双杠|平板|卷腹|臀桥|波比|登山|开合跳|高抬腿|死虫|鸟狗|V字|仰卧举|仰卧交替|龙旗|蚌式|蛤蜊|消防栓|跪姿后踢|站姿后踢|侧弓步|跳绳|匕式/.test(name)) return '自重'
+  return '其他'
+}
+
+const equipmentOrder = ['杠铃', '哑铃', '绳索', '器械', '自重', '壶铃', '其他'] as const
+
+const equipmentColors: Record<string, string> = {
+  '杠铃': 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  '哑铃': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  '绳索': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  '器械': 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  '自重': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  '壶铃': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  '其他': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+}
+
+// Sub-category definitions per muscle group
+const subCategories: Record<string, { value: string; label: string }[]> = {
+  chest: [
+    { value: 'upper', label: '上胸' },
+    { value: 'mid', label: '中胸' },
+    { value: 'lower', label: '下胸' },
+    { value: 'overall', label: '整体' },
+  ],
+  back: [
+    { value: 'upper', label: '上背' },
+    { value: 'lower', label: '下背' },
+    { value: 'lats', label: '背阔肌' },
+    { value: 'overall', label: '整体' },
+  ],
+  legs: [
+    { value: 'quads', label: '股四头' },
+    { value: 'hamstrings', label: '腘绳肌' },
+    { value: 'glutes', label: '臀部' },
+    { value: 'calves', label: '小腿' },
+  ],
+  shoulders: [
+    { value: 'front', label: '前束' },
+    { value: 'side', label: '中束' },
+    { value: 'rear', label: '后束' },
+  ],
+  biceps: [{ value: 'all', label: '全部' }],
+  triceps: [{ value: 'all', label: '全部' }],
+  core: [
+    { value: 'upper', label: '上腹' },
+    { value: 'lower', label: '下腹' },
+    { value: 'obliques', label: '腹斜肌' },
+  ],
+  glutes: [{ value: 'all', label: '全部' }],
+  forearms: [{ value: 'all', label: '全部' }],
+  traps: [{ value: 'all', label: '全部' }],
+  cardio: [{ value: 'all', label: '全部' }],
+  full_body: [{ value: 'all', label: '全部' }],
+}
+
+function getSubCategory(name: string, muscleGroup: string): string {
+  if (muscleGroup === 'chest') {
+    if (/上斜/.test(name)) return 'upper'
+    if (/下斜/.test(name)) return 'lower'
+    if (/平板|飞鸟/.test(name) && !/上斜|下斜/.test(name)) return 'mid'
+    return 'overall'
+  }
+  if (muscleGroup === 'back') {
+    if (/面拉|反向飞鸟|耸肩|直立划船|坐姿划船/.test(name)) return 'upper'
+    if (/山羊挺身|硬拉/.test(name) && !/罗马尼亚/.test(name)) return 'lower'
+    if (/引体|下拉|背阔/.test(name)) return 'lats'
+    return 'overall'
+  }
+  if (muscleGroup === 'legs') {
+    if (/深蹲|腿举|腿屈伸|箭步|分腿蹲/.test(name)) return 'quads'
+    if (/腿弯举|罗马尼亚|直腿硬拉/.test(name)) return 'hamstrings'
+    if (/臀推|臀桥|后踢|蚌式|蛤蜊/.test(name)) return 'glutes'
+    if (/提踵/.test(name)) return 'calves'
+    return 'quads'
+  }
+  if (muscleGroup === 'shoulders') {
+    if (/前平举|推举/.test(name)) return 'front'
+    if (/侧平举|直立划船/.test(name)) return 'side'
+    if (/飞鸟|面拉|反向/.test(name)) return 'rear'
+    return 'front'
+  }
+  if (muscleGroup === 'core') {
+    if (/上腹|卷腹|仰卧起坐/.test(name)) return 'upper'
+    if (/下腹|仰卧举|反向卷腹/.test(name)) return 'lower'
+    if (/腹斜|俄罗斯转体|侧/.test(name)) return 'obliques'
+    return 'upper'
+  }
+  return 'all'
+}
+
 export default function ExercisesClient({ exercises }: { exercises: Exercise[] }) {
   const [search, setSearch] = useState('')
   const [selectedGroup, setSelectedGroup] = useState('all')
+  const [selectedSub, setSelectedSub] = useState('all')
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
 
   const filteredExercises = useMemo(() => {
     return exercises.filter(ex => {
-      const matchesSearch = !search || 
-        ex.name.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch = !search ||
+        ex.name.toLowerCase().includes(search.toLowerCase()) ||
         (ex.description && ex.description.toLowerCase().includes(search.toLowerCase())) ||
         (ex.tips && ex.tips.toLowerCase().includes(search.toLowerCase()))
       const matchesGroup = selectedGroup === 'all' || ex.muscle_group === selectedGroup
-      return matchesSearch && matchesGroup
+      const matchesSub = selectedSub === 'all' || getSubCategory(ex.name, ex.muscle_group) === selectedSub
+      return matchesSearch && matchesGroup && matchesSub
     })
-  }, [exercises, search, selectedGroup])
+  }, [exercises, search, selectedGroup, selectedSub])
+
+  const currentSubs = selectedGroup === 'all' ? [] : (subCategories[selectedGroup] || [])
+
+  const handleGroupChange = (group: string) => {
+    setSelectedGroup(group)
+    setSelectedSub('all')
+  }
 
   return (
-    <div className="max-w-md mx-auto p-4 pb-32 space-y-4.5 w-full min-h-[100dvh] pt-2">
+    <div className="w-full min-h-[100dvh] flex flex-col bg-[var(--surface-0)]">
       {/* Header */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
           <Barbell weight="fill" className="h-5.5 w-5.5 text-[var(--accent)]" />
-          动作库 <span className="text-xs text-[var(--text-tertiary)] font-bold tracking-widest uppercase">Library</span>
+          动作库
         </h1>
-        <Button 
-          size="sm" 
-          variant="secondary" 
+        <Button
+          size="sm"
+          variant="secondary"
           className="gap-1.5 h-9 rounded-xl border border-white/5 bg-[var(--surface-2)] text-white hover:bg-[var(--surface-3)] active:scale-95 transition-transform text-xs font-bold"
         >
           <Plus weight="bold" className="h-4 w-4 text-[var(--accent)]" />
@@ -296,65 +401,102 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-[var(--text-disabled)]" />
-        <Input
-          placeholder="搜索动作名称、描述或诀窍..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 h-11 bg-[var(--surface-1)] border border-white/5 focus-visible:ring-[var(--accent)] rounded-xl text-sm font-semibold transition-all shadow-inner"
-        />
+      {/* Search */}
+      <div className="px-4 pb-3 shrink-0">
+        <div className="relative">
+          <MagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-disabled)]" />
+          <Input
+            placeholder="搜索动作..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 h-10 bg-[var(--surface-1)] border border-white/5 focus-visible:ring-[var(--accent)] rounded-xl text-sm font-semibold"
+          />
+        </div>
       </div>
 
-      {/* Muscle Group Tabs */}
-      <Tabs defaultValue="all" value={selectedGroup} onValueChange={setSelectedGroup} className="w-full">
-        {/* Swipeable Tab List */}
-        <TabsList className="w-full flex justify-start gap-1.5 bg-transparent border-0 p-0 overflow-x-auto scrollbar-none pb-2.5 h-auto">
-          <TabsTrigger 
-            value="all" 
+      {/* Main: Sidebar + Content */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* ── Left Sidebar ── */}
+        <div className="w-[140px] shrink-0 border-r border-white/5 bg-[var(--surface-1)] overflow-y-auto no-scrollbar">
+          {/* All button */}
+          <button
+            onClick={() => handleGroupChange('all')}
             className={cn(
-              "flex-shrink-0 text-xs font-bold px-4 py-2 rounded-full transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95",
-              selectedGroup === 'all' 
-                ? "bg-white text-black border-white shadow-md font-black" 
-                : "bg-[var(--surface-2)]/60 text-[var(--text-secondary)] border-white/5 hover:text-white"
+              "w-full px-3 py-2.5 text-left text-xs font-bold flex items-center gap-2 transition-all border-l-2 cursor-pointer",
+              selectedGroup === 'all'
+                ? "bg-white/5 border-l-white text-white"
+                : "border-l-transparent text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]"
             )}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-            全部 ({exercises.length})
-          </TabsTrigger>
+            <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
+            全部
+            <span className="ml-auto text-[10px] text-[var(--text-disabled)]">{exercises.length}</span>
+          </button>
+
           {muscleGroups.map(group => {
             const count = exercises.filter(e => e.muscle_group === group.value).length
             const colors = muscleGroupColors[group.value] || muscleGroupColors.all
             const isActive = selectedGroup === group.value
 
             return (
-              <TabsTrigger 
-                key={group.value} 
-                value={group.value} 
+              <button
+                key={group.value}
+                onClick={() => handleGroupChange(group.value)}
                 className={cn(
-                  "flex-shrink-0 text-xs font-bold px-4 py-2 rounded-full transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95",
-                  isActive 
-                    ? colors.activeBg + " border-transparent shadow-md font-black" 
-                    : `${colors.bg} ${colors.text} ${colors.border} hover:text-white`
+                  "w-full px-3 py-2.5 text-left text-xs font-bold flex items-center gap-2 transition-all border-l-2 cursor-pointer",
+                  isActive
+                    ? "bg-white/5 border-l-white text-white"
+                    : "border-l-transparent text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]"
                 )}
               >
-                <span className={cn("h-1.5 w-1.5 rounded-full transition-transform", colors.dot, isActive && "scale-125")} />
-                {group.label} ({count})
-              </TabsTrigger>
+                <span className={cn("h-2 w-2 rounded-full shrink-0", colors.dot)} />
+                {group.label}
+                <span className="ml-auto text-[10px] text-[var(--text-disabled)]">{count}</span>
+              </button>
             )
           })}
-        </TabsList>
+        </div>
 
-        <TabsContent value="all" className="mt-1 focus-visible:outline-none">
-          <ExerciseList exercises={filteredExercises} onSelect={setSelectedExercise} />
-        </TabsContent>
-        {muscleGroups.map(group => (
-          <TabsContent key={group.value} value={group.value} className="mt-1 focus-visible:outline-none">
+        {/* ── Right Content ── */}
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          {/* Sub-category chips */}
+          {currentSubs.length > 1 && (
+            <div className="flex gap-1.5 px-4 py-2.5 border-b border-white/5 overflow-x-auto no-scrollbar shrink-0">
+              <button
+                onClick={() => setSelectedSub('all')}
+                className={cn(
+                  "shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer border",
+                  selectedSub === 'all'
+                    ? "bg-white text-black border-white"
+                    : "bg-[var(--surface-2)] text-[var(--text-secondary)] border-white/5 hover:text-white"
+                )}
+              >
+                全部
+              </button>
+              {currentSubs.map(sub => (
+                <button
+                  key={sub.value}
+                  onClick={() => setSelectedSub(sub.value)}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer border",
+                    selectedSub === sub.value
+                      ? "bg-white text-black border-white"
+                      : "bg-[var(--surface-2)] text-[var(--text-secondary)] border-white/5 hover:text-white"
+                  )}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Exercise grid grouped by equipment */}
+          <div className="p-4 pb-32">
             <ExerciseList exercises={filteredExercises} onSelect={setSelectedExercise} />
-          </TabsContent>
-        ))}
-      </Tabs>
+          </div>
+        </div>
+      </div>
 
       {/* Details Sheet Dialog */}
       <AnimatePresence>
@@ -499,102 +641,66 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
 function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect: (ex: Exercise) => void }) {
   if (exercises.length === 0) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-16 text-[var(--text-tertiary)] bg-[var(--surface-1)] border border-white/5 rounded-2xl"
-      >
+      <div className="text-center py-16 text-[var(--text-tertiary)]">
         <Barbell className="h-10 w-10 mx-auto mb-3 text-[var(--text-disabled)]" />
         <p className="text-sm font-bold">没有找到匹配的动作</p>
-      </motion.div>
+      </div>
     )
   }
 
-  const getGroupLabel = (group: string) => {
-    return muscleGroups.find(g => g.value === group)?.label || group
-  }
+  // Group exercises by equipment type
+  const grouped = useMemo(() => {
+    const map: Record<string, Exercise[]> = {}
+    for (const ex of exercises) {
+      const eq = getEquipmentType(ex.name)
+      if (!map[eq]) map[eq] = []
+      map[eq].push(ex)
+    }
+    // Sort by equipmentOrder
+    const result: { equipment: string; exercises: Exercise[] }[] = []
+    for (const eq of equipmentOrder) {
+      if (map[eq]?.length) result.push({ equipment: eq, exercises: map[eq] })
+    }
+    return result
+  }, [exercises])
 
   return (
-    <div className="space-y-2.5">
-      <AnimatePresence>
-        {exercises.map((exercise, index) => {
-          const meta = getExerciseMeta(exercise.name, exercise.muscle_group)
-          return (
-            <motion.div
-              key={exercise.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 28, delay: Math.min(index * 0.02, 0.2) }}
-            >
-              <Card 
-                className="card-surface bg-[var(--surface-1)] border border-white/5 rounded-xl cursor-pointer group active:scale-[0.98] transition-all hover:border-white/10 shadow-sm"
+    <div className="space-y-5">
+      {grouped.map(({ equipment, exercises: groupEx }) => (
+        <div key={equipment}>
+          {/* Equipment group header */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text-secondary)]">{equipment}</h3>
+            <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-md border", equipmentColors[equipment] || equipmentColors['其他'])}>
+              {groupEx.length}
+            </span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
+          {/* 2-column grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {groupEx.map((exercise) => (
+              <Card
+                key={exercise.id}
                 onClick={() => onSelect(exercise)}
+                className="bg-[var(--surface-1)] border border-white/5 rounded-xl cursor-pointer active:scale-[0.97] transition-all hover:border-white/10"
               >
-                <CardContent className="p-3 flex items-center gap-3.5">
-                  {/* Left SVG Illustration or AI Live Demo Image preview */}
-                  {(() => {
-                    const demoImg = getDemoImage(exercise.name)
-                    if (demoImg) {
-                      return (
-                        <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-black border border-white/5 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                          <img 
-                            src={demoImg} 
-                            alt={exercise.name} 
-                            className="w-full h-full object-cover opacity-90"
-                          />
-                          {/* Pulsing micro indicator for live demo */}
-                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-purple-500 border border-black shadow animate-pulse" />
-                        </div>
-                      )
-                    }
-                    return <MuscleGroupGraphic group={exercise.muscle_group} size="sm" />
-                  })()}
-
-                  {/* Middle Content */}
-                  <div className="flex-1 min-w-0 pr-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-sm font-bold text-white truncate leading-tight group-hover:text-[var(--accent)] transition-colors">
-                        {exercise.name}
-                      </h3>
-                      {exercise.is_custom && (
-                        <Badge className="text-[8px] font-black px-1.5 py-0 bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 rounded-md">
-                          自定义
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Metadata Row */}
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-2)] border border-white/5 px-1.5 py-0.5 rounded-md leading-none">
-                        {getGroupLabel(exercise.muscle_group)}
-                      </span>
-                      <span className="text-[10px] font-bold text-[var(--text-tertiary)] leading-none">•</span>
-                      <span className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface-2)] border border-white/5 px-1.5 py-0.5 rounded-md leading-none">
-                        {meta.equipment}
-                      </span>
-                      <span className="text-[10px] font-bold text-[var(--text-tertiary)] leading-none">•</span>
-                      <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-md border leading-none uppercase tracking-wider", meta.difficultyColor)}>
-                        {meta.difficulty}
-                      </span>
-                    </div>
-
-                    {/* Sub-text snippet */}
-                    {exercise.tips && (
-                      <p className="text-[11px] text-[var(--text-tertiary)] truncate leading-relaxed mt-1 font-medium">
-                        {exercise.tips}
-                      </p>
-                    )}
+                <CardContent className="p-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", muscleGroupColors[exercise.muscle_group]?.dot || 'bg-gray-500')} />
+                    <h4 className="text-[11px] font-bold text-white truncate leading-tight">
+                      {exercise.name}
+                    </h4>
                   </div>
-
-                  {/* Right Action Chevron */}
-                  <ArrowRight weight="bold" className="h-4 w-4 text-[var(--text-disabled)] shrink-0 group-hover:text-white transition-colors mr-1" />
+                  <p className="text-[9px] text-[var(--text-disabled)] font-medium truncate">
+                    {muscleGroups.find(g => g.value === exercise.muscle_group)?.label || exercise.muscle_group}
+                  </p>
                 </CardContent>
               </Card>
-            </motion.div>
-          )
-        })}
-      </AnimatePresence>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
