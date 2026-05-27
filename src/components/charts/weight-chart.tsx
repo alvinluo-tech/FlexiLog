@@ -8,17 +8,17 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 interface Props { data: { date: string; weight: number }[] }
 
 export default function WeightChart({ data }: Props) {
-  if (!data.length) return <div className="h-48 flex items-center justify-center text-[var(--text-disabled)]">No data</div>
+  if (!data.length) return <div className="h-48 flex items-center justify-center text-[var(--text-disabled)]">暂无数据</div>
 
   const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  const labels = sorted.map(d => new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }))
+  const labels = sorted.map(d => new Date(d.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }))
 
   return (
     <div className="h-48">
       <Line data={{
         labels,
         datasets: [{
-          label: 'Weight',
+          label: '体重',
           data: sorted.map(d => d.weight),
           borderColor: '#0a84ff',
           backgroundColor: 'rgba(10,132,255,0.1)',

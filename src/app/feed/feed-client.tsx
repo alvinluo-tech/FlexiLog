@@ -60,8 +60,8 @@ export default function FeedClient({ posts, currentUserId }: Props) {
     const date = new Date(dateStr)
     const now = new Date()
     const diffHours = Math.floor((now.getTime() - date.getTime()) / 3600000)
-    if (diffHours < 1) return 'Just now'
-    if (diffHours < 24) return diffHours + 'h ago'
+    if (diffHours < 1) return '刚刚'
+    if (diffHours < 24) return diffHours + '小时前'
     return date.toLocaleDateString('en', { month: 'short', day: 'numeric' })
   }
 
@@ -75,13 +75,13 @@ export default function FeedClient({ posts, currentUserId }: Props) {
 
   return (
     <div className="max-w-lg mx-auto p-4 space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Community</h1>
+      <h1 className="text-xl font-semibold tracking-tight">社区动态</h1>
 
       {localPosts.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Barbell className="h-10 w-10 mx-auto mb-3 text-[var(--text-disabled)]" />
-            <p className="text-[var(--text-tertiary)]">No shared workouts yet</p>
+            <p className="text-[var(--text-tertiary)]">暂无分享的训练</p>
           </CardContent>
         </Card>
       ) : (
@@ -96,7 +96,7 @@ export default function FeedClient({ posts, currentUserId }: Props) {
                     <User className="h-4 w-4 text-[var(--text-tertiary)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">User</p>
+                    <p className="text-sm font-medium">用户</p>
                     <p className="text-xs text-[var(--text-disabled)]">{formatDate(post.created_at)}</p>
                   </div>
                 </div>
@@ -109,15 +109,15 @@ export default function FeedClient({ posts, currentUserId }: Props) {
                 <div className="flex gap-4 p-3 rounded-lg bg-[var(--surface-2)] mb-3">
                   <div className="text-center">
                     <p className="text-lg font-bold data-number">{summary.exercises}</p>
-                    <p className="text-xs text-[var(--text-disabled)]">Exercises</p>
+                    <p className="text-xs text-[var(--text-disabled)]">动作</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold data-number">{summary.sets}</p>
-                    <p className="text-xs text-[var(--text-disabled)]">Sets</p>
+                    <p className="text-xs text-[var(--text-disabled)]">组数</p>
                   </div>
                   <div className="text-center">
                     <p className="text-lg font-bold data-number">{(summary.volume / 1000).toFixed(1)}T</p>
-                    <p className="text-xs text-[var(--text-disabled)]">Volume</p>
+                    <p className="text-xs text-[var(--text-disabled)]">训练量</p>
                   </div>
                 </div>
 
@@ -146,12 +146,12 @@ export default function FeedClient({ posts, currentUserId }: Props) {
                 {showComments[post.id] && (
                   <div className="flex gap-2 mt-3">
                     <Input
-                      placeholder="Add a comment..."
+                      placeholder="添加评论..."
                       value={commentInputs[post.id] || ''}
                       onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
                       className="flex-1 bg-[var(--surface-2)] border-[var(--border-default)]"
                     />
-                    <Button size="sm" onClick={() => handleComment(post.id)}>Post</Button>
+                    <Button size="sm" onClick={() => handleComment(post.id)}>发布</Button>
                   </div>
                 )}
               </CardContent>

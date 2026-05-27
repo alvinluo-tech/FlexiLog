@@ -6,13 +6,13 @@ import { House, Barbell, ListChecks, Sparkle, User, Lightning, Clock, Users } fr
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/dashboard', label: 'Home', icon: House },
-  { href: '/exercises', label: 'Exercises', icon: Barbell },
-  { href: '/workout/live', label: 'Workout', icon: ListChecks },
-  { href: '/history', label: 'History', icon: Clock },
-  { href: '/ai-coach', label: 'AI Coach', icon: Sparkle },
-  { href: '/feed', label: 'Feed', icon: Users },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/dashboard', label: '首页', icon: House },
+  { href: '/exercises', label: '动作', icon: Barbell },
+  { href: '/workout/live', label: '训练', icon: ListChecks },
+  { href: '/history', label: '历史', icon: Clock },
+  { href: '/ai-coach', label: 'AI 教练', icon: Sparkle },
+  { href: '/feed', label: '动态', icon: Users },
+  { href: '/profile', label: '我的', icon: User },
 ]
 
 export function Sidebar() {
@@ -26,7 +26,7 @@ export function Sidebar() {
           </div>
           <div>
             <h1 className="text-[18px] font-bold tracking-tight">FlexiLog</h1>
-            <p className="text-[11px] text-[var(--text-disabled)] -mt-0.5">AI Fitness Tracker</p>
+            <p className="text-[11px] text-[var(--text-disabled)] -mt-0.5">AI 健身追踪器</p>
           </div>
         </Link>
       </div>

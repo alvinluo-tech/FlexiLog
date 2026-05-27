@@ -362,7 +362,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
                         />
                         {/* Category badge floating */}
                         <Badge className="absolute bottom-3 left-3 bg-purple-500/90 text-white border border-white/10 px-2 py-0.5 rounded-md font-bold text-[9px] tracking-wider uppercase">
-                          AI 示范图 (Live Demo)
+                          AI 示范图
                         </Badge>
                       </div>
                     )
@@ -406,7 +406,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
                       {selectedExercise.description && (
                         <div className="space-y-2.5">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                            <BookOpen weight="fill" className="h-4.5 w-4.5" /> 动作指南 / Steps
+                            <BookOpen weight="fill" className="h-4.5 w-4.5" /> 动作步骤
                           </h4>
                           {(() => {
                             const steps = selectedExercise.description
@@ -443,7 +443,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
                         <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/15 p-4 rounded-xl shadow-inner">
                           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none" />
                           <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5 mb-1.5">
-                            <Sparkle weight="fill" className="h-4.5 w-4.5 text-amber-400 animate-pulse" /> 专业教练提示 / Coach Tips
+                            <Sparkle weight="fill" className="h-4.5 w-4.5 text-amber-400 animate-pulse" /> 专业教练提示
                           </h4>
                           <p className="text-xs leading-relaxed text-[var(--text-secondary)] italic font-semibold">"{selectedExercise.tips}"</p>
                         </div>
@@ -452,7 +452,7 @@ export default function ExercisesClient({ exercises }: { exercises: Exercise[] }
                       {/* Secondary list */}
                       {meta.secondary.length > 1 && (
                         <div className="space-y-2 pt-1">
-                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">辅助参与肌群 (Secondary Targets)</h4>
+                          <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">辅助参与肌群</h4>
                           <div className="flex flex-wrap gap-1.5">
                             {meta.secondary.map(m => (
                               <Badge key={m} variant="secondary" className="text-[9px] font-bold px-2 py-0.5 bg-[var(--surface-2)] border border-white/5 text-[var(--text-secondary)] rounded-md">
@@ -547,7 +547,7 @@ function ExerciseList({ exercises, onSelect }: { exercises: Exercise[]; onSelect
                       </h3>
                       {exercise.is_custom && (
                         <Badge className="text-[8px] font-black px-1.5 py-0 bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0 rounded-md">
-                          CUSTOM
+                          自定义
                         </Badge>
                       )}
                     </div>

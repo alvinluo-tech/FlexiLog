@@ -280,14 +280,14 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
             variant="ghost"
           >
             <Plus weight="bold" className="h-4 w-4 text-purple-400" />
-            New Chat
+            新建对话
           </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
           {conversations.length === 0 ? (
             <div className="p-4 text-center">
-              <p className="text-[10px] text-[var(--text-disabled)] uppercase tracking-wider font-bold">No chats yet</p>
+              <p className="text-[10px] text-[var(--text-disabled)] uppercase tracking-wider font-bold">暂无对话</p>
             </div>
           ) : (
             conversations.map((conv) => (
@@ -303,7 +303,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
               >
                 <div className="flex-1 min-w-0 pr-2">
                   <p className="text-xs font-bold truncate text-white group-hover:text-purple-300 transition-colors">
-                    {conv.title || "Untitled Chat"}
+                    {conv.title || "未命名对话"}
                   </p>
                   <p className="text-[9px] text-[var(--text-disabled)] mt-0.5 font-mono">
                     {new Date(conv.updated_at).toLocaleDateString()}
@@ -312,7 +312,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
                 <button
                   onClick={(e) => handleDeleteConversation(conv.id, e)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg hover:text-[var(--danger)] transition-all shrink-0 cursor-pointer"
-                  title="Delete Conversation"
+                  title="删除对话"
                 >
                   <Trash className="h-3.5 w-3.5" />
                 </button>
@@ -336,7 +336,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
               >
                 <Sparkle weight="fill" className="h-7 w-7 text-purple-400" />
               </motion.div>
-              <h3 className="text-base font-black tracking-tight text-white mb-1.5">AI Coach Assistant</h3>
+              <h3 className="text-base font-black tracking-tight text-white mb-1.5">AI 健身助手</h3>
               <p className="text-xs text-[var(--text-tertiary)] max-w-[240px] leading-relaxed font-light">
                 请输入您的健身目标、训练环境或身体数据，我将为您量身定制科学的健美与减脂计划。
               </p>
@@ -448,7 +448,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
                 <Button
                   onClick={handleInterrupt}
                   className="w-9 h-9 p-0 rounded-full bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white text-red-400 active:scale-90 transition-all flex items-center justify-center cursor-pointer shadow-md shadow-red-500/5"
-                  title="中断生成 (Stop Generating)"
+                  title="中断生成"
                 >
                   <Stop weight="fill" className="h-4.5 w-4.5" />
                 </Button>

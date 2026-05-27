@@ -72,7 +72,7 @@ function ConfirmContent() {
                 <h2 className="text-lg font-semibold mb-2">验证成功！</h2>
                 <p className="text-sm text-[var(--text-tertiary)] mb-6">{message}</p>
                 <Link href="/dashboard">
-                  <Button className="w-full">进入 Dashboard</Button>
+                  <Button className="w-full">进入控制面板</Button>
                 </Link>
               </>
             )}

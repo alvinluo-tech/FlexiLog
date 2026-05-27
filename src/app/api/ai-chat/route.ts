@@ -59,11 +59,14 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
       "day": "周一",
       "focus": "训练部位",
       "exercises": [
-        {"name": "动作名", "sets": 3, "reps": "10", "rest": "90s"}
+        {"name": "动作名", "sets": 3, "reps": "10", "weight_kg": 60, "rest": "90s"}
       ]
     }
   ]
-}`
+}
+
+注意：weight_kg 是推荐起始重量（kg），必须根据用户体重和健身年限给出合理建议。
+重量建议原则：新手(1年以下): 体重的30-50%，中级(1-3年): 体重的50-80%，高级(3年以上): 体重的80-120%。`
 
     // Build messages array
     const messages = [
@@ -114,7 +117,18 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
     const jsonMatch = aiContent.match(/\{[\s\S]*"days"[\s\S]*\}/)
     if (jsonMatch) {
       try {
-        extractedPlan = JSON.parse(jsonMatch[0])
+        const rawPlan = JSON.parse(jsonMatch[0])
+        // Normalize: ensure exercises have weight_kg field
+        if (rawPlan.days) {
+          rawPlan.days = rawPlan.days.map((day: any) => ({
+            ...day,
+            exercises: (day.exercises || []).map((ex: any) => ({
+              ...ex,
+              weight_kg: ex.weight_kg ?? ex.weight ?? undefined,
+            })),
+          }))
+        }
+        extractedPlan = rawPlan
       } catch {}
     }
 

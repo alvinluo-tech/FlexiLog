@@ -33,9 +33,9 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
     const date = new Date(dateStr)
     const now = new Date()
     const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000)
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return diffDays + ' days ago'
+    if (diffDays === 0) return '今天'
+    if (diffDays === 1) return '昨天'
+    if (diffDays < 7) return diffDays + ' 天前'
     return date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
@@ -55,22 +55,22 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
 
   return (
     <div className="max-w-5xl mx-auto p-4 space-y-6">
-      <h1 className="text-xl font-semibold tracking-tight">Training History</h1>
+      <h1 className="text-xl font-semibold tracking-tight">训练历史</h1>
 
       {/* Charts */}
       <Tabs defaultValue="volume">
         <TabsList className="w-fit">
           <TabsTrigger value="volume" className="gap-1.5">
-            <Barbell className="h-4 w-4" /> Volume
+            <Barbell className="h-4 w-4" /> 训练量
           </TabsTrigger>
           <TabsTrigger value="weight" className="gap-1.5">
-            <ChartLineUp className="h-4 w-4" /> Weight
+            <ChartLineUp className="h-4 w-4" /> 体重
           </TabsTrigger>
         </TabsList>
         <TabsContent value="volume" className="mt-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-sm text-[var(--text-tertiary)] mb-3">Last 14 days training volume</p>
+              <p className="text-sm text-[var(--text-tertiary)] mb-3">近14天训练量</p>
               <VolumeChart data={volumeChartData} />
             </CardContent>
           </Card>
@@ -78,7 +78,7 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
         <TabsContent value="weight" className="mt-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-sm text-[var(--text-tertiary)] mb-3">Weight trend</p>
+              <p className="text-sm text-[var(--text-tertiary)] mb-3">体重趋势</p>
               <WeightChart data={weightChartData} />
             </CardContent>
           </Card>
@@ -89,15 +89,15 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
       <div className="grid grid-cols-3 gap-3">
         <div className="card p-3 text-center">
           <p className="text-2xl font-bold data-number">{history.length}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Workouts</p>
+          <p className="text-xs text-[var(--text-tertiary)]">次训练</p>
         </div>
         <div className="card p-3 text-center">
           <p className="text-2xl font-bold data-number">{(history.reduce((s, h) => s + h.volume, 0) / 1000).toFixed(1)}T</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Total Volume</p>
+          <p className="text-xs text-[var(--text-tertiary)]">总训练量</p>
         </div>
         <div className="card p-3 text-center">
           <p className="text-2xl font-bold data-number">{history.reduce((s, h) => s + h.duration, 0)}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Minutes</p>
+          <p className="text-xs text-[var(--text-tertiary)]">分钟</p>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
           <Card>
             <CardContent className="p-8 text-center">
               <Barbell className="h-10 w-10 mx-auto mb-3 text-[var(--text-disabled)]" />
-              <p className="text-[var(--text-tertiary)]">No workout history</p>
+              <p className="text-[var(--text-tertiary)]">暂无训练记录</p>
             </CardContent>
           </Card>
         ) : (
@@ -128,7 +128,7 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
                       <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
                         <span>{formatDate(item.date)}</span>
                         <span>|</span>
-                        <span>{item.exerciseCount} exercises</span>
+                        <span>{item.exerciseCount} 个动作</span>
                         <span>|</span>
                         <span className="data-number">{item.duration}min</span>
                       </div>
@@ -137,7 +137,7 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-sm font-semibold data-number">{(item.volume / 1000).toFixed(1)}T</p>
-                      <p className="text-xs text-[var(--text-tertiary)]">{item.setCount} sets</p>
+                      <p className="text-xs text-[var(--text-tertiary)]">{item.setCount} 组</p>
                     </div>
                     {expandedId === item.id ? (
                       <CaretUp className="h-4 w-4 text-[var(--text-disabled)]" />
@@ -162,9 +162,9 @@ export default function HistoryClient({ history, weightChartData, volumeChartDat
                     {/* Sets Table */}
                     <div className="space-y-1">
                       <div className="grid grid-cols-[1fr_60px_50px_50px] gap-2 text-xs text-[var(--text-disabled)] font-medium px-2">
-                        <div>Exercise</div>
-                        <div className="text-right">Weight</div>
-                        <div className="text-right">Reps</div>
+                        <div>动作</div>
+                        <div className="text-right">重量</div>
+                        <div className="text-right">次数</div>
                         <div className="text-right">RPE</div>
                       </div>
                       {item.sets.map((set, i) => (

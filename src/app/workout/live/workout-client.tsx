@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { 
   Play, Plus, Trash, X,
   Timer, Check, Barbell, FloppyDisk, CalendarBlank, Lightning,
-  MagnifyingGlass
+  MagnifyingGlass, DotsThreeVertical, PencilSimple
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet, discardWorkoutSession, updateWorkoutSet, deleteWorkoutSet } from '@/app/actions/workout'
+import { deleteTemplate, renameTemplate } from '@/app/actions/templates'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -68,6 +69,9 @@ export default function WorkoutLiveClient({
   const [saving, setSaving] = useState(false)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const [aiPlan, setAiPlan] = useState<any | null>(null)
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
+  const [editingTemplateName, setEditingTemplateName] = useState('')
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   
   // Workout phase: idle -> preparing -> active -> completed
   const [workoutPhase, setWorkoutPhase] = useState<'idle' | 'preparing' | 'active' | 'completed'>(() => {
@@ -216,13 +220,18 @@ export default function WorkoutLiveClient({
                 exercise: matched 
                   ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
                   : { id: 'template-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
-                sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
-                  id: 'set-' + Date.now() + '-' + i,
-                  weight: ex.weight_kg ? String(ex.weight_kg) : '',
-                  reps: String(ex.reps || '').replace(/[^0-9-]/g, '') || '',
-                  completed: false,
-                  saved: false
-                })),
+                sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
+                  const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
+                  const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
+                  const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
+                  return {
+                    id: 'set-' + Date.now() + '-' + i,
+                    weight: parseWeightFromPlan(ex),
+                    reps: repsNum,
+                    completed: false,
+                    saved: false
+                  }
+                }),
                 previousData: matched ? (previousData[matched.id] || []) : [],
                 restSeconds: 90
               }
@@ -235,6 +244,26 @@ export default function WorkoutLiveClient({
       console.error('Failed to load template:', e)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    const result = await deleteTemplate(templateId)
+    if (result.error) {
+      alert('删除失败: ' + result.error)
+    } else {
+      router.refresh()
+    }
+  }
+
+  const handleRenameTemplate = async (templateId: string) => {
+    if (!editingTemplateName.trim()) return
+    const result = await renameTemplate(templateId, editingTemplateName.trim())
+    if (result.error) {
+      alert('重命名失败: ' + result.error)
+    } else {
+      setEditingTemplateId(null)
+      router.refresh()
     }
   }
 
@@ -260,13 +289,18 @@ export default function WorkoutLiveClient({
                 exercise: matched
                   ? { id: matched.id, name: matched.name, muscle_group: matched.muscle_group }
                   : { id: 'ai-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
-                sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
-                  id: 'set-' + Date.now() + '-' + i,
-                  weight: ex.weight_kg ? String(ex.weight_kg) : '',
-                  reps: String(ex.reps || '').replace(/[^0-9-]/g, '') || '',
-                  completed: false,
-                  saved: false
-                })),
+                sets: Array.from({ length: ex.sets || 3 }, (_, i) => {
+                  const rawReps = String(ex.reps || '').replace(/[^0-9-]/g, '') || ''
+                  const repsRange = rawReps.match(/^(\d+)[-–](\d+)$/)
+                  const repsNum = repsRange ? String(Math.round((parseInt(repsRange[1]) + parseInt(repsRange[2])) / 2)) : rawReps
+                  return {
+                    id: 'set-' + Date.now() + '-' + i,
+                    weight: parseWeightFromPlan(ex),
+                    reps: repsNum,
+                    completed: false,
+                    saved: false
+                  }
+                }),
                 previousData: matched ? (previousData[matched.id] || []) : [],
                 restSeconds: 90
               }
@@ -343,6 +377,25 @@ export default function WorkoutLiveClient({
   }, [sessionId, router])
 
   // ── Exercise & Set Management ──
+  // Helper: parse weight from various AI formats (number, "55-75kg", "20-30kg/只", etc.)
+  const parseWeightFromPlan = useCallback((ex: any): string => {
+    // Direct number field
+    if (ex.weight_kg && typeof ex.weight_kg === 'number' && ex.weight_kg > 0) return String(ex.weight_kg)
+    if (ex.weight && typeof ex.weight === 'number' && ex.weight > 0) return String(ex.weight)
+    // String number
+    if (ex.weight_kg && typeof ex.weight_kg === 'string') {
+      const n = parseFloat(ex.weight_kg)
+      if (!isNaN(n) && n > 0) return String(n)
+    }
+    // Parse weight_ref like "55-75kg" → take lower bound
+    const ref = ex.weight_ref || ex.weight_kg || ex.weight
+    if (ref && typeof ref === 'string') {
+      const match = ref.match(/(\d+)[-–]?(\d+)?/)
+      if (match) return match[1]
+    }
+    return ''
+  }, [])
+
   // Helper: parse rep range like "8-12" and return middle value
   const parseRepRange = useCallback((repsStr: string): { display: string; middle: number } => {
     if (!repsStr) return { display: '', middle: 0 }
@@ -633,23 +686,75 @@ export default function WorkoutLiveClient({
             </div>
             <div className="space-y-2">
               {templates.map(template => (
-                <button
-                  key={template.id}
-                  onClick={() => handleStartTemplateWorkout(template)}
-                  disabled={saving}
-                  className="w-full bg-[var(--surface-1)] border border-[var(--border-default)] rounded-xl p-3.5 flex items-center justify-between text-left hover:border-[var(--border-hover)] active:scale-[0.98] transition-all"
-                >
-                  <div className="min-w-0 flex-1 pr-3">
-                    <p className="font-bold text-white text-sm truncate">{template.name}</p>
-                    <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 truncate">{template.description || '自定义模板'}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-[var(--text-tertiary)]">
-                      {template.exercises?.length || 0} 项
-                    </span>
-                    <Play weight="fill" className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  </div>
-                </button>
+                <div key={template.id} className="relative">
+                  {editingTemplateId === template.id ? (
+                    /* Inline rename input */
+                    <div className="bg-[var(--surface-1)] border border-[var(--accent)] rounded-xl p-3 flex items-center gap-2">
+                      <Input
+                        value={editingTemplateName}
+                        onChange={(e) => setEditingTemplateName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameTemplate(template.id)
+                          if (e.key === 'Escape') setEditingTemplateId(null)
+                        }}
+                        className="h-8 text-sm flex-1 bg-[var(--surface-2)] border-transparent focus-visible:border-[var(--accent)]"
+                        autoFocus
+                      />
+                      <button onClick={() => handleRenameTemplate(template.id)} className="p-1.5 text-[var(--accent)] cursor-pointer">
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => setEditingTemplateId(null)} className="p-1.5 text-[var(--text-tertiary)] cursor-pointer">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    /* Normal template card */
+                    <button
+                      onClick={() => handleStartTemplateWorkout(template)}
+                      disabled={saving}
+                      className="w-full bg-[var(--surface-1)] border border-[var(--border-default)] rounded-xl p-3.5 flex items-center justify-between text-left hover:border-[var(--border-hover)] active:scale-[0.98] transition-all"
+                    >
+                      <div className="min-w-0 flex-1 pr-3">
+                        <p className="font-bold text-white text-sm truncate">{template.name}</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 truncate">{template.description || '自定义模板'}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-[var(--text-tertiary)]">
+                          {template.exercises?.length || 0} 项
+                        </span>
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === template.id ? null : template.id) }}
+                          className="p-1.5 rounded-lg hover:bg-[var(--surface-3)] active:scale-90 transition-all cursor-pointer"
+                        >
+                          <DotsThreeVertical className="h-4 w-4 text-[var(--text-tertiary)]" />
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Dropdown menu */}
+                  {openMenuId === template.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute right-2 top-full mt-1 z-50 bg-[var(--surface-2)] border border-white/10 rounded-xl shadow-xl shadow-black/40 py-1 min-w-[140px]">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setEditingTemplateId(template.id); setEditingTemplateName(template.name) }}
+                          className="w-full px-3 py-2 text-left text-xs font-medium text-white hover:bg-[var(--surface-3)] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <PencilSimple className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                          重命名
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); handleDeleteTemplate(template.id) }}
+                          className="w-full px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Trash className="h-3.5 w-3.5" />
+                          删除
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           </div>

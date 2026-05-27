@@ -38,7 +38,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-[12px] text-[var(--text-tertiary)] font-semibold uppercase tracking-wider">Welcome back</p>
+          <p className="text-[12px] text-[var(--text-tertiary)] font-semibold uppercase tracking-wider">欢迎回来</p>
           <h1 className="text-3xl font-extrabold tracking-tighter text-white leading-none mt-1">{userName}</h1>
         </div>
         {stats.streak > 0 && (
@@ -48,7 +48,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
             className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 px-3.5 py-1.5 rounded-full"
           >
             <Flame weight="fill" className="h-4 w-4 text-orange-500 animate-pulse" />
-            <span className="text-sm font-bold text-orange-500 data-number">{stats.streak}d Streak</span>
+            <span className="text-sm font-bold text-orange-500 data-number">{stats.streak}天连续</span>
           </motion.div>
         )}
       </motion.div>
@@ -67,10 +67,10 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
             <div className="relative flex items-center justify-between">
               <div>
                 <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md mb-2">
-                  <Barbell className="h-3 w-3" /> Gym Time
+                  <Barbell className="h-3 w-3" /> 健身时间
                 </span>
-                <p className="text-white text-2xl font-black tracking-tight">START TRAINING</p>
-                <p className="text-white/80 text-[12px] font-medium mt-1">Ready for your next workout session?</p>
+                <p className="text-white text-2xl font-black tracking-tight">开始训练</p>
+                <p className="text-white/80 text-[12px] font-medium mt-1">准备好开始下一次训练了吗？</p>
               </div>
               <motion.div 
                 whileHover={{ rotate: 45 }}
@@ -92,7 +92,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
               <div className="h-7 w-7 rounded-lg bg-[var(--accent-subtle)] border border-[var(--accent-muted)] flex items-center justify-center">
                 <Target className="h-3.5 w-3.5 text-[var(--accent)]" />
               </div>
-              <span className="text-[12px] font-bold text-[var(--text-secondary)]">Weekly Target</span>
+              <span className="text-[12px] font-bold text-[var(--text-secondary)]">每周目标</span>
             </div>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-[34px] font-black leading-none data-number text-white">{stats.weeklyWorkouts}</span>
@@ -111,20 +111,20 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
               <div className="h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <Barbell className="h-3.5 w-3.5 text-[var(--success)]" />
               </div>
-              <span className="text-[12px] font-bold text-[var(--text-secondary)]">Total Volume</span>
+              <span className="text-[12px] font-bold text-[var(--text-secondary)]">总训练量</span>
             </div>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-[34px] font-black leading-none data-number text-white">{(stats.totalVolume / 1000).toFixed(1)}</span>
-              <span className="text-md text-[var(--text-disabled)] font-bold">tons</span>
+              <span className="text-md text-[var(--text-disabled)] font-bold">吨</span>
             </div>
           </div>
           {stats.totalVolume > 0 ? (
             <div className="flex items-center gap-1">
               <TrendUp className="h-3.5 w-3.5 text-[var(--success)]" />
-              <span className="text-[11px] text-[var(--success)] font-bold">+8.5% this week</span>
+              <span className="text-[11px] text-[var(--success)] font-bold">本周 +8.5%</span>
             </div>
           ) : (
-            <span className="text-[11px] text-[var(--text-tertiary)] font-medium">No weight logs yet</span>
+            <span className="text-[11px] text-[var(--text-tertiary)] font-medium">暂无训练记录</span>
           )}
         </div>
 
@@ -135,7 +135,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
               <div className="h-7 w-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <ChartLineUp className="h-3.5 w-3.5 text-[var(--warning)]" />
               </div>
-              <span className="text-[12px] font-bold text-[var(--text-secondary)]">Current Weight</span>
+              <span className="text-[12px] font-bold text-[var(--text-secondary)]">当前体重</span>
             </div>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="text-[34px] font-black leading-none data-number text-white">{stats.currentWeight || '--'}</span>
@@ -144,10 +144,10 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
           </div>
           {stats.weightChange !== 0 ? (
             <span className={"text-[11px] font-bold " + (stats.weightChange < 0 ? "text-[var(--success)]" : "text-[var(--warning)]")}>
-              {stats.weightChange > 0 ? 'Increased' : 'Decreased'} {Math.abs(stats.weightChange).toFixed(1)}kg
+              {stats.weightChange > 0 ? '增加' : '减少'} {Math.abs(stats.weightChange).toFixed(1)}kg
             </span>
           ) : (
-            <span className="text-[11px] text-[var(--text-tertiary)] font-medium">Stable trend</span>
+            <span className="text-[11px] text-[var(--text-tertiary)] font-medium">趋势稳定</span>
           )}
         </div>
 
@@ -161,14 +161,14 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
               <div className="h-7 w-7 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
                 <Lightning weight="fill" className="h-3.5 w-3.5 text-purple-400" />
               </div>
-              <span className="text-[12px] font-bold text-purple-300">AI Coach</span>
+              <span className="text-[12px] font-bold text-purple-300">AI 教练</span>
             </div>
             <div>
-              <p className="text-[16px] font-extrabold text-white leading-tight">AI Plan Engine</p>
-              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">Generate routine now</p>
+              <p className="text-[16px] font-extrabold text-white leading-tight">AI 计划引擎</p>
+              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">立即生成计划</p>
             </div>
             <div className="flex items-center justify-between text-[11px] text-purple-400 font-bold">
-              <span>Go to Chat</span>
+              <span>前往对话</span>
               <ArrowRight className="h-3 w-3" />
             </div>
           </motion.div>
@@ -178,15 +178,15 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
       {/* Recent Workouts */}
       <motion.div variants={itemVariants} className="mb-6">
         <div className="flex items-center justify-between mb-3.5">
-          <h2 className="text-xl font-bold tracking-tight text-white">Recent Workouts</h2>
-          <Link href="/history" className="text-sm text-[var(--accent)] font-semibold hover:text-[var(--accent-hover)]">See All</Link>
+          <h2 className="text-xl font-bold tracking-tight text-white">最近训练</h2>
+          <Link href="/history" className="text-sm text-[var(--accent)] font-semibold hover:text-[var(--accent-hover)]">查看全部</Link>
         </div>
         
         {recentWorkouts.length === 0 ? (
           <div className="card p-8 text-center bg-[var(--surface-1)] border-[var(--border-default)]">
             <Barbell className="h-10 w-10 mx-auto mb-3 text-[var(--text-tertiary)]" />
-            <p className="text-[15px] font-bold text-[var(--text-secondary)]">No workouts recorded yet</p>
-            <Link href="/workout/live" className="text-sm text-[var(--accent)] mt-2 inline-block font-semibold hover:underline">Start your first workout</Link>
+            <p className="text-[15px] font-bold text-[var(--text-secondary)]">暂无训练记录</p>
+            <Link href="/workout/live" className="text-sm text-[var(--accent)] mt-2 inline-block font-semibold hover:underline">开始第一次训练</Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -203,7 +203,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
                     <div>
                       <p className="text-[15px] font-bold text-white">{w.name}</p>
                       <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">
-                        {w.exercises} exercises · {w.duration}
+                        {w.exercises} 个动作 · {w.duration}
                         {w.volume > 0 && <span className="data-number"> · {(w.volume / 1000).toFixed(1)}T</span>}
                       </p>
                     </div>
@@ -211,7 +211,7 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
                   {w.isActive ? (
                     <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md animate-pulse">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      Live
+                      训练中
                     </span>
                   ) : (
                     <span className="text-[12px] text-[var(--text-disabled)] font-medium">{w.date}</span>
@@ -233,8 +233,8 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
             <div className="h-10 w-10 rounded-xl bg-[var(--surface-3)] flex items-center justify-center mx-auto mb-2 border border-[var(--border-default)]">
               <Barbell className="h-5.5 w-5.5 text-[var(--text-secondary)]" />
             </div>
-            <p className="text-[14px] font-bold text-white">Exercises</p>
-            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">25+ movements</p>
+            <p className="text-[14px] font-bold text-white">训练动作</p>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">25+ 种动作</p>
           </motion.div>
         </Link>
         <Link href="/profile">
@@ -245,8 +245,8 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
             <div className="h-10 w-10 rounded-xl bg-[var(--surface-3)] flex items-center justify-center mx-auto mb-2 border border-[var(--border-default)]">
               <ChartLineUp className="h-5.5 w-5.5 text-[var(--text-secondary)]" />
             </div>
-            <p className="text-[14px] font-bold text-white">Profile</p>
-            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Body stats</p>
+            <p className="text-[14px] font-bold text-white">个人资料</p>
+            <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">身体数据</p>
           </motion.div>
         </Link>
       </motion.div>

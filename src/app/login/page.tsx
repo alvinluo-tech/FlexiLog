@@ -31,13 +31,13 @@ export default function LoginPage() {
             <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-[32px] font-bold tracking-tight">FlexiLog</h1>
-          <p className="text-[15px] text-[var(--text-tertiary)] mt-1">AI Fitness Tracker</p>
+          <p className="text-[15px] text-[var(--text-tertiary)] mt-1">AI 健身追踪器</p>
         </div>
 
         {/* Form */}
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[13px] text-[var(--text-secondary)] font-medium">Email</label>
+            <label className="text-[13px] text-[var(--text-secondary)] font-medium">邮箱</label>
             <div className="relative">
               <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-disabled)]" />
               <Input
@@ -51,13 +51,13 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[13px] text-[var(--text-secondary)] font-medium">Password</label>
+            <label className="text-[13px] text-[var(--text-secondary)] font-medium">密码</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-disabled)]" />
               <Input
                 name="password"
                 type="password"
-                placeholder="Enter password"
+                placeholder="输入密码"
                 required
                 minLength={6}
                 className="h-14 pl-12 bg-[var(--surface-2)] border-[var(--border-default)] rounded-xl text-[16px]"
@@ -72,15 +72,15 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl text-[16px] font-semibold">
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? '登录中...' : '登录'}
           </Button>
 
           <div className="flex items-center justify-between mt-2">
             <Link href="/forgot-password" className="text-[14px] text-[var(--accent)] font-medium">
-              Forgot password?
+              忘记密码？
             </Link>
             <Link href="/register" className="text-[14px] text-[var(--accent)] font-medium">
-              Create account
+              创建账号
             </Link>
           </div>
         </form>

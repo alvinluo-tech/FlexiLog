@@ -96,7 +96,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
         setCurrentPlan(data.plan)
       }
     } catch (err) {
-      setError('Generation failed')
+      setError('生成失败')
     } finally {
       setIsGenerating(false)
     }
@@ -114,7 +114,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
     const result = await savePlanAsTemplate(currentPlan)
     
     if (result.error) {
-      alert('Failed to save: ' + result.error)
+      alert('保存失败：' + result.error)
     } else {
       localStorage.setItem('ai_plan', JSON.stringify(currentPlan))
       router.push('/workout/live')
@@ -148,9 +148,9 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 <Sparkle weight="fill" className="h-8 w-8 text-purple-400 animate-pulse" />
               </div>
             </div>
-            <h3 className="text-lg font-black text-white mt-6 tracking-tight">AI Plan Engine Active</h3>
+            <h3 className="text-lg font-black text-white mt-6 tracking-tight">AI 计划引擎运行中</h3>
             <p className="text-xs text-[var(--text-secondary)] mt-2 max-w-[240px] leading-relaxed">
-              Analyzing your physical stats, workout target, and historical data to build the optimal training program...
+              正在分析您的身体数据、训练目标和历史记录，构建最优训练计划...
             </p>
           </motion.div>
         )}
@@ -171,10 +171,10 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
             )}
             <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2 leading-none">
               <Sparkle weight="fill" className="h-5 w-5 text-purple-400" />
-              AI Coach
+              AI 教练
             </h1>
           </div>
-          {view !== 'chat' && <p className="text-xs text-[var(--text-tertiary)] font-semibold">Dynamic Planner</p>}
+          {view !== 'chat' && <p className="text-xs text-[var(--text-tertiary)] font-semibold">智能计划</p>}
         </div>
 
         {/* Segmented Selector for views */}
@@ -191,7 +191,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
             )}
           >
             <ChatCircle weight="fill" className="h-4.5 w-4.5 text-purple-400" />
-            Coach Chat
+            教练对话
           </Button>
           <Button
             variant="ghost"
@@ -205,7 +205,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
             )}
           >
             <Lightning weight="fill" className="h-4.5 w-4.5 text-purple-400" />
-            Plan Generator
+            计划生成
           </Button>
         </div>
       </div>
@@ -227,13 +227,13 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
             <CardContent className="p-5 relative z-10 flex flex-col justify-between h-40">
               <div>
                 <span className="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md">
-                  <Lightning weight="fill" className="h-3 w-3" /> Quick Builder
+                  <Lightning weight="fill" className="h-3 w-3" /> 快速创建
                 </span>
-                <h2 className="text-lg font-black text-white mt-2 leading-none">Instant Routine</h2>
+                <h2 className="text-lg font-black text-white mt-2 leading-none">快速生成</h2>
                 <p className="text-[11px] text-[var(--text-secondary)] mt-1.5 font-medium leading-relaxed">
                   {profile 
-                    ? `Generating using body stats: ${profile.weight_kg}kg, Goal: ${profile.goal || '增肌'}`
-                    : 'Complete profile configuration first for best results.'
+                    ? `基于身体数据生成：${profile.weight_kg}kg，目标：${profile.goal || '增肌'}`
+                    : '请先完成个人资料配置以获得最佳效果。'
                   }
                 </p>
               </div>
@@ -244,7 +244,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 className="w-full h-11 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-xl active:scale-95 transition-transform border border-white/10 mt-2 text-xs uppercase tracking-wider"
               >
                 <Lightning weight="fill" className="h-4 w-4 mr-1.5" />
-                Build Custom Plan
+                生成自定义计划
               </Button>
             </CardContent>
           </Card>
@@ -260,7 +260,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-2 pt-1">
                 <div>
-                  <h2 className="text-[16px] font-black text-white tracking-tight">{displayPlan.name || 'Routine Overview'}</h2>
+                  <h2 className="text-[16px] font-black text-white tracking-tight">{displayPlan.name || '训练概览'}</h2>
                   {displayPlan.description && (
                     <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 font-semibold leading-relaxed">{displayPlan.description}</p>
                   )}
@@ -282,7 +282,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                           value={index.toString()} 
                           className="flex-shrink-0 text-[11px] font-bold rounded-lg px-3 py-1.5"
                         >
-                          {day.day?.split(' - ')[0] || `Day ${index + 1}`}
+                          {day.day?.split(' - ')[0] || `第 ${index + 1} 天`}
                         </TabsTrigger>
                       ))}
                     </TabsList>
@@ -306,13 +306,20 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-white leading-tight">{ex.name}</p>
-                                      <p className="text-[11px] text-[var(--text-tertiary)] font-semibold mt-0.5">{ex.sets} sets x {ex.reps} reps</p>
+                                      <p className="text-[11px] text-[var(--text-tertiary)] font-semibold mt-0.5">
+                                        {ex.sets} 组 x {ex.reps} 次
+                                        {(ex.weight_kg || ex.weight_ref) && (
+                                          <span className="text-[var(--accent)] ml-1.5">
+                                            @ {ex.weight_kg ? `${ex.weight_kg}kg` : ex.weight_ref}
+                                          </span>
+                                        )}
+                                      </p>
                                     </div>
                                   </div>
                                   {ex.rest && (
                                     <Badge variant="outline" className="text-[10px] font-bold border-white/5 text-[var(--text-secondary)] rounded-md py-0.5 px-1.5">
                                       <Clock className="h-3 w-3 mr-1 text-[var(--accent)]" />
-                                      {ex.rest}s rest
+                                      {ex.rest}秒休息
                                     </Badge>
                                   )}
                                 </div>
@@ -330,7 +337,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                     disabled={saving}
                   >
                     <CalendarBlank weight="fill" className="h-5.5 w-5.5" />
-                    {saving ? 'Applying...' : 'Apply Routine Now'}
+                    {saving ? '应用中...' : '立即应用计划'}
                   </Button>
                 </>
               )}
@@ -341,9 +348,9 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 <div className="h-14 w-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mb-4">
                   <Sparkle weight="fill" className="h-7 w-7 text-purple-400" />
                 </div>
-                <h3 className="text-sm font-extrabold text-white mb-1.5">No Custom Program Yet</h3>
+                <h3 className="text-sm font-extrabold text-white mb-1.5">暂无自定义计划</h3>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-[200px] leading-relaxed">
-                  Start a conversation in Coach Chat or click the Quick Builder to create your training splits.
+                  在教练对话中创建计划，或点击快速创建来生成训练计划。
                 </p>
               </CardContent>
             </Card>
@@ -352,7 +359,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
           {/* Saved Plans Section */}
           {savedPlans.length > 0 && (
             <section className="space-y-3.5 pt-2">
-              <h2 className="text-base font-black text-white tracking-tight">Saved Routines</h2>
+              <h2 className="text-base font-black text-white tracking-tight">已保存计划</h2>
               <div className="space-y-2.5">
                 {savedPlans.map(plan => (
                   <Card 
@@ -368,9 +375,9 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                         <Target className="h-5.5 w-5.5 text-purple-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white">{plan.plan_data?.name || 'Training Plan'}</p>
+                        <p className="text-sm font-bold text-white">{plan.plan_data?.name || '训练计划'}</p>
                         <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5 font-bold uppercase tracking-wider">
-                          Created {new Date(plan.created_at).toLocaleDateString()}
+                          创建于 {new Date(plan.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </CardContent>

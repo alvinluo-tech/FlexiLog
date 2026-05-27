@@ -8,17 +8,17 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
 interface Props { data: { date: string; volume: number }[] }
 
 export default function VolumeChart({ data }: Props) {
-  if (!data.length) return <div className="h-48 flex items-center justify-center text-[var(--text-disabled)]">No data</div>
+  if (!data.length) return <div className="h-48 flex items-center justify-center text-[var(--text-disabled)]">暂无数据</div>
 
   const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  const labels = sorted.map(d => new Date(d.date).toLocaleDateString('en', { weekday: 'short' }))
+  const labels = sorted.map(d => new Date(d.date).toLocaleDateString('zh-CN', { weekday: 'short' }))
 
   return (
     <div className="h-48">
       <Bar data={{
         labels,
         datasets: [{
-          label: 'Volume',
+          label: '训练量',
           data: sorted.map(d => d.volume / 1000),
           backgroundColor: 'rgba(10,132,255,0.6)',
           borderColor: '#0a84ff',
