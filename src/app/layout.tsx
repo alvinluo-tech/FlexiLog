@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { BottomNav } from "@/components/navigation";
+import { Sidebar, BottomNav } from "@/components/navigation";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -21,7 +21,6 @@ export const metadata: Metadata = {
     template: "%s | FlexiLog",
   },
   description: "AI-powered fitness tracking. Log workouts, get personalized plans.",
-  keywords: ["fitness", "workout", "AI coach", "training log"],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -48,8 +47,9 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased">
-        <main className="flex-1 pb-20 md:pb-0">
+      <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased">
+        <Sidebar />
+        <main className="flex-1 md:ml-60 pb-20 md:pb-0">
           {children}
         </main>
         <BottomNav />

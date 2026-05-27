@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlexiLog</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{font-family:'Geist',system-ui,sans-serif}.mono{font-family:'Geist Mono',monospace;font-variant-numeric:tabular-nums}
+:root{--s0:#0a0a0b;--s1:#111113;--s2:#18181b;--s3:#1f1f23;--t1:#fafafa;--t2:#a1a1aa;--t3:#71717a;--accent:#3b82f6;--success:#22c55e;--border:rgba(255,255,255,0.08)}
+body{background:var(--s0);color:var(--t1)}.card{background:var(--s1);border:1px solid var(--border);border-radius:12px}.glass{background:rgba(10,10,11,0.85);backdrop-filter:blur(16px);border-top:1px solid var(--border)}.gradient{background:linear-gradient(135deg,#2563eb,#3b82f6,#60a5fa)}
+.input{background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--t1);padding:8px 12px;width:100%}.badge{background:var(--s3);border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 8px}
+.tab{padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;color:var(--t3)}.tab.active{background:var(--s3);color:var(--t1)}.progress{height:6px;background:var(--s3);border-radius:3px;overflow:hidden}.progress-fill{height:100%;border-radius:3px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:500;color:var(--t3);padding:8px 0;cursor:pointer}.nav-item.active{color:var(--accent)}
+.set-row{display:grid;grid-template-columns:36px 1fr 1fr 1fr 44px;gap:8px;align-items:center;padding:8px;border-radius:8px}
+.set-input{background:var(--s2);border:1px solid var(--border);border-radius:6px;height:36px;text-align:center;color:var(--t1);font-size:14px;width:100%}
+.check-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center}.check-btn.done{background:var(--success);color:#fff}.check-btn.pending{background:var(--s2);border:1px solid var(--border);color:var(--t3)}
+.page{display:none}.page.active{display:block}.sidebar-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;font-size:14px;cursor:pointer;color:var(--t3)}.sidebar-item.active{background:rgba(59,130,246,0.12);color:var(--accent)}
+@media(max-width:768px){.desktop-only{display:none}}@media(min-width:769px){.mobile-only{display:none}}
+</style>
+</head>
+<body class="min-h-screen">
+<aside class="desktop-only fixed left-0 top-0 bottom-0 w-60 border-r border-white/[0.08] p-4" style="background:var(--s1)">
+<div class="mb-8"><h1 class="text-lg font-semibold tracking-tight" style="color:var(--accent)">FlexiLog</h1></div>
+<nav class="space-y-1">
+<div class="sidebar-item active" onclick="showPage('dashboard')">看板</div>
+<div class="sidebar-item" onclick="showPage('exercises')">动作库</div>
+<div class="sidebar-item" onclick="showPage('workout')">训练</div>
+<div class="sidebar-item" onclick="showPage('aicoach')">AI 教练</div>
+<div class="sidebar-item" onclick="showPage('profile')">我的</div>
+</nav></aside>
+<main class="md:ml-60 pb-20 md:pb-8">
+<div id="page-dashboard" class="page active"><div class="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+<div class="relative overflow-hidden rounded-2xl p-6 gradient"><div class="relative"><h1 class="text-2xl font-semibold tracking-tight text-white">FlexiLog</h1><p class="text-sm text-white/70">今天继续突破</p><div class="text-4xl font-bold text-white mb-2 mt-4">Push Day</div><div class="flex gap-5 text-sm text-white/80 mb-4"><span>5个动作</span><span>0/15组</span></div></div></div>
+<div class="grid grid-cols-2 gap-3">
+<div class="card p-4"><div class="text-xs font-medium uppercase tracking-wider mb-2" style="color:var(--t3)">本周训练</div><div class="text-3xl font-semibold mono">3/5</div></div>
+<div class="card p-4"><div class="text-xs font-medium uppercase tracking-wider mb-2" style="color:var(--t3)">训练容量</div><div class="text-3xl font-semibold mono">12.5T</div></div>
+<div class="card p-4"><div class="text-xs font-medium uppercase tracking-wider mb-2" style="color:var(--t3)">当前体重</div><div class="text-3xl font-semibold mono">75.5kg</div></div>
+<div class="card p-4 cursor-pointer" onclick="showPage('aicoach')"><div class="text-sm font-semibold">AI 教练</div></div>
+</div>
+<div><h2 class="text-base font-semibold tracking-tight mb-3">最近训练</h2><div class="space-y-2">
+<div class="card p-3.5"><div class="flex items-center justify-between"><div><div class="text-sm font-medium">Pull Day</div><div class="text-xs" style="color:var(--t3)">4个动作 | 52min</div></div><span class="text-xs" style="color:var(--t3)">昨天</span></div></div>
+<div class="card p-3.5"><div class="flex items-center justify-between"><div><div class="text-sm font-medium">Leg Day</div><div class="text-xs" style="color:var(--t3)">5个动作 | 65min</div></div><span class="text-xs" style="color:var(--t3)">前天</span></div></div>
+</div></div></div></div>
+<div id="page-exercises" class="page"><div class="max-w-4xl mx-auto px-4 pt-6 space-y-4">
+<h1 class="text-xl font-semibold tracking-tight">动作库</h1>
+<div class="relative"><input class="input pl-10" placeholder="搜索动作..."></div>
+<div class="flex gap-1 p-1 rounded-xl" style="background:var(--s1);border:1px solid var(--border)"><div class="tab active">全部</div><div class="tab">胸</div><div class="tab">背</div><div class="tab">腿</div><div class="tab">肩</div></div>
+<div class="space-y-2">
+<div class="card p-3.5"><div class="text-sm font-medium">卧推</div><div class="text-xs" style="color:var(--t3)">背部微弓，脚踏实地</div></div>
+<div class="card p-3.5"><div class="text-sm font-medium">硬拉</div><div class="text-xs" style="color:var(--t3)">背部挺直，脚跟发力</div></div>
+<div class="card p-3.5"><div class="text-sm font-medium">深蹲</div><div class="text-xs" style="color:var(--t3)">膝盖对准脚尖方向</div></div>
+</div></div></div>
+<div id="page-workout" class="page"><div class="max-w-4xl mx-auto px-4 pt-6 space-y-4">
+<div class="flex items-center justify-between"><div><h1 class="text-xl font-semibold tracking-tight">训练中</h1><p class="text-xs mt-0.5" style="color:var(--t3)"><span class="mono">00:32:15</span> | <span class="mono">4/15</span>组</p></div></div>
+<div class="rounded-xl p-4 flex items-center justify-between" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2)"><span style="color:var(--t2)">组间休息</span><span class="text-2xl font-semibold mono" style="color:var(--accent)">01:23</span></div>
+<div class="card"><div class="p-4 pb-3"><span class="text-base font-medium">卧推</span><span class="badge ml-2">chest</span></div><div class="px-4 pb-3">
+<div class="p-2.5 rounded-lg mb-3" style="background:var(--s2)"><p class="text-xs mb-1.5" style="color:var(--t3)">上次训练</p><div class="flex gap-1.5"><span class="badge mono">60kg x 10</span><span class="badge mono">65kg x 8</span></div></div>
+<div class="space-y-2">
+<div class="set-row"><div class="text-center text-xs mono" style="color:var(--t3)">1</div><input class="set-input mono" value="60"><input class="set-input mono" value="10"><input class="set-input mono" value="7.5"><div class="check-btn done">✓</div></div>
+<div class="set-row"><div class="text-center text-xs mono" style="color:var(--t3)">2</div><input class="set-input mono" value="65"><input class="set-input mono" value="8"><input class="set-input mono" value="8"><div class="check-btn done">✓</div></div>
+<div class="set-row" style="background:rgba(34,197,94,0.12)"><div class="text-center text-xs mono" style="color:var(--t3)">3</div><input class="set-input mono" value="65"><input class="set-input mono" value="8"><input class="set-input mono" value="8.5"><div class="check-btn done">✓</div></div>
+<div class="set-row"><div class="text-center text-xs mono" style="color:var(--t3)">4</div><input class="set-input mono" placeholder="0"><input class="set-input mono" placeholder="0"><input class="set-input mono" placeholder="-"><div class="check-btn pending">✓</div></div>
+</div></div></div>
+<button class="w-full h-14 rounded-xl border-dashed flex items-center justify-center gap-2 text-sm" style="border:1px dashed var(--border);color:var(--t3)">+ 添加动作</button>
+<button class="w-full h-12 rounded-xl gradient text-white font-medium text-sm">完成训练</button>
+</div></div>
+<div id="page-aicoach" class="page"><div class="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+<h1 class="text-xl font-semibold tracking-tight">AI 教练</h1>
+<div class="rounded-xl p-5 gradient text-white"><h2 class="text-lg font-semibold mb-1">生成训练计划</h2><p class="text-sm text-white/80">AI 根据身体参数和目标制定专属计划</p></div>
+<div class="card"><div class="p-4"><div class="text-sm font-medium">周一 - Push</div><div class="text-xs" style="color:var(--t3)">胸部、肩部、三头</div></div><div class="px-4 pb-4 space-y-2">
+<div class="p-3 rounded-lg flex items-center justify-between" style="background:var(--s2)"><div><div class="text-sm font-medium">卧推</div><div class="text-xs mono" style="color:var(--t3)">4组 x 8-10</div></div><span class="badge">90s</span></div>
+<div class="p-3 rounded-lg flex items-center justify-between" style="background:var(--s2)"><div><div class="text-sm font-medium">肩推</div><div class="text-xs mono" style="color:var(--t3)">3组 x 8-10</div></div><span class="badge">90s</span></div>
+<div class="p-3 rounded-lg flex items-center justify-between" style="background:var(--s2)"><div><div class="text-sm font-medium">侧平举</div><div class="text-xs mono" style="color:var(--t3)">3组 x 12-15</div></div><span class="badge">45s</span></div>
+</div></div>
+<button class="w-full h-12 rounded-xl gradient text-white font-medium text-sm">应用到今日训练</button>
+</div></div>
+<div id="page-profile" class="page"><div class="max-w-4xl mx-auto px-4 pt-6 space-y-5">
+<h1 class="text-xl font-semibold tracking-tight">个人设置</h1>
+<div class="card p-5 flex items-center gap-4"><div class="h-16 w-16 rounded-full flex items-center justify-center" style="background:var(--s3)"><span class="text-2xl">👤</span></div><div><h2 class="text-lg font-semibold">健身爱好者</h2><p class="text-sm" style="color:var(--t3)">FlexiLog 用户</p></div></div>
+<div class="card"><div class="p-4 pb-2"><span class="text-base font-medium">身体参数</span></div><div class="p-4 pt-0 space-y-3">
+<div class="grid grid-cols-2 gap-3"><div><label class="text-xs" style="color:var(--t3)">性别</label><div class="input mt-1">男</div></div><div><label class="text-xs" style="color:var(--t3)">年龄</label><input class="input mt-1 mono" value="25"></div></div>
+<div class="grid grid-cols-2 gap-3"><div><label class="text-xs" style="color:var(--t3)">身高</label><input class="input mt-1 mono" value="175"></div><div><label class="text-xs" style="color:var(--t3)">体重</label><input class="input mt-1 mono" value="75.5"></div></div>
+</div></div>
+<div class="card"><div class="p-4 pb-2"><span class="text-base font-medium">器械条件</span></div><div class="p-4 pt-0"><div class="grid grid-cols-3 gap-2">
+<div class="p-3 rounded-lg text-center cursor-pointer" style="background:rgba(59,130,246,0.12);border:1px solid var(--accent)"><div class="text-sm font-medium" style="color:var(--accent)">商业健身房</div></div>
+<div class="p-3 rounded-lg text-center cursor-pointer" style="background:var(--s2);border:1px solid var(--border)"><div class="text-sm font-medium">哑铃环境</div></div>
+<div class="p-3 rounded-lg text-center cursor-pointer" style="background:var(--s2);border:1px solid var(--border)"><div class="text-sm font-medium">居家自重</div></div>
+</div></div></div>
+</div></div>
+</main>
+<nav class="mobile-only fixed bottom-0 left-0 right-0 glass z-50">
+<div class="flex justify-around items-center h-16 px-2">
+<div class="nav-item active" onclick="showPage('dashboard')">看板</div>
+<div class="nav-item" onclick="showPage('exercises')">动作库</div>
+<div class="nav-item" onclick="showPage('workout')">训练</div>
+<div class="nav-item" onclick="showPage('aicoach')">AI教练</div>
+<div class="nav-item" onclick="showPage('profile')">我的</div>
+</div></nav>
+<script>function showPage(n){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');document.querySelectorAll('.sidebar-item,.nav-item').forEach(i=>i.classList.remove('active'));var L={dashboard:'看板',exercises:'动作库',workout:'训练',aicoach:'AI教练',profile:'我的'};document.querySelectorAll('.sidebar-item,.nav-item').forEach(i=>{if(i.textContent.trim().includes(L[n]))i.classList.add('active')})}</script>
+</body>
+</html>
