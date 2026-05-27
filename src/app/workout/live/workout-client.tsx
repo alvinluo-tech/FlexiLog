@@ -558,59 +558,63 @@ export default function WorkoutLiveClient({
 
       if (weight > 0 && reps > 0) {
         let savedSetId = set.id
-        if (sessionId) {
-          if (!set.saved || set.id.startsWith('set-')) {
-            // Save new set to database
-            const result = await addWorkoutSet(sessionId, block.exercise.id, {
-              set_number: setIndex + 1,
-              weight_kg: weight,
-              reps,
-            })
-            
-            if (result.data) {
-              savedSetId = result.data.id
-              // Update set ID to database UUID and set saved to true
-              setExerciseBlocks(prev => {
-                const updated = [...prev]
-                const b = { ...updated[blockIndex] }
-                const s = [...b.sets]
-                s[setIndex] = { 
-                  ...s[setIndex], 
-                  id: result.data.id, 
-                  completed: true, 
-                  saved: true,
-                  weight: weightStr,
-                  reps: repsStr
-                }
-                b.sets = s
-                updated[blockIndex] = b
-                return updated
+        try {
+          if (sessionId) {
+            if (!set.saved || set.id.startsWith('set-')) {
+              // Save new set to database
+              const result = await addWorkoutSet(sessionId, block.exercise.id, {
+                set_number: setIndex + 1,
+                weight_kg: weight,
+                reps,
               })
+              
+              if (result.data) {
+                savedSetId = result.data.id
+                // Update set ID to database UUID and set saved to true
+                setExerciseBlocks(prev => {
+                  const updated = [...prev]
+                  const b = { ...updated[blockIndex] }
+                  const s = [...b.sets]
+                  s[setIndex] = { 
+                    ...s[setIndex], 
+                    id: result.data.id, 
+                    completed: true, 
+                    saved: true,
+                    weight: weightStr,
+                    reps: repsStr
+                  }
+                  b.sets = s
+                  updated[blockIndex] = b
+                  return updated
+                })
+              }
+            } else {
+              // If already saved, just update completed state in database
+              await updateWorkoutSet(set.id, { completed: true })
+              updateSet(blockIndex, setIndex, 'completed', true)
+            }
+            
+            // Check for new personal records
+            try {
+              const prResult = await checkAndUpdatePRs(userId, block.exercise.id, weight, reps, savedSetId.startsWith('set-') ? undefined : savedSetId)
+              if (prResult.newPRs.length > 0) {
+                setPrNotifications({ exerciseName: block.exercise.name, prs: prResult.newPRs })
+                setTimeout(() => setPrNotifications(null), 4000)
+              }
+            } catch (e) {
+              console.error('PR check failed:', e)
             }
           } else {
-            // If already saved, just update completed state in database
-            await updateWorkoutSet(set.id, { completed: true })
+            // No active session (should not happen), just update UI
             updateSet(blockIndex, setIndex, 'completed', true)
           }
-          
-          // Check for new personal records
-          try {
-            const prResult = await checkAndUpdatePRs(userId, block.exercise.id, weight, reps, savedSetId.startsWith('set-') ? undefined : savedSetId)
-            if (prResult.newPRs.length > 0) {
-              setPrNotifications({ exerciseName: block.exercise.name, prs: prResult.newPRs })
-              // Auto-dismiss after 4 seconds
-              setTimeout(() => setPrNotifications(null), 4000)
-            }
-          } catch (e) {
-            console.error('PR check failed:', e)
-          }
-        } else {
-          // No active session (should not happen), just update UI
+        } catch (e) {
+          console.error('Failed to save set:', e)
           updateSet(blockIndex, setIndex, 'completed', true)
         }
         
-        // Auto-trigger rest timer
-        setRestTimeLeft(block.restSeconds)
+        // Auto-trigger rest timer (always, even if DB save failed)
+        setRestTimeLeft(block.restSeconds || 90)
         setIsRestRunning(true)
       } else {
         alert('请先输入重量和次数')
