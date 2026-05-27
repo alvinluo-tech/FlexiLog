@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar, BottomNav } from "@/components/navigation";
 import { PWARegister } from "@/components/pwa-register";
+import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -38,11 +39,14 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html
       lang="zh-CN"
@@ -53,11 +57,19 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex bg-[var(--surface-0)] text-[var(--text-primary)] font-sans antialiased overflow-x-hidden">
         <PWARegister />
-        <Sidebar />
-        <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-x-hidden">
-          {children}
-        </main>
-        <BottomNav />
+        {user ? (
+          <>
+            <Sidebar />
+            <main className="flex-1 md:ml-60 pb-20 md:pb-0 overflow-x-hidden">
+              {children}
+            </main>
+            <BottomNav />
+          </>
+        ) : (
+          <main className="flex-1 overflow-x-hidden">
+            {children}
+          </main>
+        )}
       </body>
     </html>
   );
