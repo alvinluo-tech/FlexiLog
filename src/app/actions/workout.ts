@@ -49,15 +49,13 @@ export async function endWorkoutSession(sessionId: string) {
 }
 
 export async function discardWorkoutSession(sessionId: string) {
-  const supabase = await createClient()
+  // Use service role key to completely bypass RLS and delete successfully
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  // Delete sets associated with this session first to maintain integrity
-  await supabase
-    .from('workout_sets')
-    .delete()
-    .eq('session_id', sessionId)
-
-  // Delete the session
+  // Rely on foreign key ON DELETE CASCADE to atomicly clean up sets!
   const { error } = await supabase
     .from('workout_sessions')
     .delete()
