@@ -49,11 +49,7 @@ export async function endWorkoutSession(sessionId: string) {
 }
 
 export async function discardWorkoutSession(sessionId: string) {
-  // Use service role key to bypass RLS for delete operations
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = await createClient()
 
   // Delete sets associated with this session first to maintain integrity
   await supabase
@@ -68,7 +64,7 @@ export async function discardWorkoutSession(sessionId: string) {
     .eq('id', sessionId)
 
   if (error) {
-    console.error('Failed to discard session with service role:', error)
+    console.error('Failed to discard session:', error)
     return { error: error.message }
   }
 
