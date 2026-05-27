@@ -76,7 +76,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'MiMo-v2.5-Pro',
+      model: 'mimo-v2.5-pro',
       messages: [
         {
           role: 'system',
@@ -177,7 +177,7 @@ ${JSON.stringify(workoutSummary, null, 2)}
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'MiMo-v2.5-Pro',
+      model: 'mimo-v2.5-pro',
       messages: [
         {
           role: 'system',
