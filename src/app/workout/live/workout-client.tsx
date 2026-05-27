@@ -207,7 +207,7 @@ export default function WorkoutLiveClient({
                 sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
                   id: 'set-' + Date.now() + '-' + i,
                   weight: '',
-                  reps: String(ex.reps || '').replace(/[^0-9]/g, '') || '',
+                  reps: String(ex.reps || '').replace(/[^0-9-]/g, '') || '',
                   completed: false,
                   saved: false
                 })),
