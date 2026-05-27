@@ -68,6 +68,16 @@ export default function WorkoutLiveClient({
   const [saving, setSaving] = useState(false)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const [aiPlan, setAiPlan] = useState<any | null>(null)
+  
+  // Workout phase: idle -> preparing -> active -> completed
+  const [workoutPhase, setWorkoutPhase] = useState<'idle' | 'preparing' | 'active' | 'completed'>(() => {
+    // Restore phase from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('workout_phase')
+      if (saved === 'active' || saved === 'preparing') return saved
+    }
+    return initialSessionId ? 'active' : 'idle'
+  })
 
   // Rest timer state
   const [restTimeLeft, setRestTimeLeft] = useState(0)
@@ -77,13 +87,39 @@ export default function WorkoutLiveClient({
   const sessionTimerRef = useRef<NodeJS.Timeout | null>(null)
   const restTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load AI plan from localStorage
+  // Load AI plan and restore workout state from localStorage
   useEffect(() => {
+    // Load AI plan
     const savedPlan = localStorage.getItem('ai_plan')
     if (savedPlan) {
       try { setAiPlan(JSON.parse(savedPlan)) } catch {}
     }
+    
+    // Restore exercise blocks if returning to page
+    const savedBlocks = localStorage.getItem('workout_exercises')
+    if (savedBlocks && exerciseBlocks.length === 0) {
+      try {
+        const blocks = JSON.parse(savedBlocks)
+        if (blocks.length > 0) {
+          setExerciseBlocks(blocks.map((b: any) => ({ ...b, restSeconds: b.restSeconds ?? 90 })))
+        }
+      } catch {}
+    }
   }, [])
+
+  // Persist exercise blocks to localStorage whenever they change
+  useEffect(() => {
+    if (exerciseBlocks.length > 0) {
+      localStorage.setItem('workout_exercises', JSON.stringify(exerciseBlocks))
+    } else {
+      localStorage.removeItem('workout_exercises')
+    }
+  }, [exerciseBlocks])
+
+  // Persist workout phase
+  useEffect(() => {
+    localStorage.setItem('workout_phase', workoutPhase)
+  }, [workoutPhase])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -147,26 +183,13 @@ export default function WorkoutLiveClient({
 
   // ── Session Actions ──
   const handleStartEmptyWorkout = async () => {
-    setSaving(true)
-    const result = await createWorkoutSession()
-    if (result.data) {
-      setSessionId(result.data.id)
-      setSessionStartTime(Date.now())
-      setElapsedTime(0)
-      setExerciseBlocks([])
-    }
-    setSaving(false)
+    setExerciseBlocks([])
+    setWorkoutPhase('preparing')
   }
 
   const handleStartTemplateWorkout = async (template: any) => {
     setSaving(true)
     try {
-      const result = await createWorkoutSession(template.id)
-      if (result.data) {
-        setSessionId(result.data.id)
-        setSessionStartTime(Date.now())
-        setElapsedTime(0)
-        
         const plan = template.exercises
         if (plan?.length > 0) {
           const today = new Date().getDay()
@@ -189,9 +212,9 @@ export default function WorkoutLiveClient({
               }
             })
             setExerciseBlocks(newBlocks)
+            setWorkoutPhase('preparing')
           }
         }
-      }
     } catch (e) {
       console.error('Failed to load template:', e)
     } finally {
@@ -241,6 +264,21 @@ export default function WorkoutLiveClient({
     } finally {
       setSaving(false)
     }
+  }
+
+  // Start the actual workout (create session and start timer)
+  const handleStartWorkout = async () => {
+    if (exerciseBlocks.length === 0) return
+    
+    setSaving(true)
+    const result = await createWorkoutSession()
+    if (result.data) {
+      setSessionId(result.data.id)
+      setSessionStartTime(Date.now())
+      setElapsedTime(0)
+      setWorkoutPhase('active')
+    }
+    setSaving(false)
   }
 
   const handleDiscardWorkout = async () => {
@@ -473,9 +511,9 @@ export default function WorkoutLiveClient({
   }, [filteredExercises])
 
   // ════════════════════════════════════════
-  //  LOBBY SCREEN (no active session)
+  //  LOBBY SCREEN (idle - no exercises loaded)
   // ════════════════════════════════════════
-  if (sessionStartTime === null) {
+  if (workoutPhase === 'idle') {
     return (
       <div className="max-w-md mx-auto p-4 pb-32 space-y-5 w-full min-h-[100dvh]">
         {/* Header */}
@@ -574,6 +612,126 @@ export default function WorkoutLiveClient({
       </div>
     )
   }
+
+  // ════════════════════════════════════════
+  //  PREPARING SCREEN (exercises loaded, waiting to start)
+  // ════════════════════════════════════════
+  if (workoutPhase === 'preparing') {
+    return (
+      <div className="max-w-md mx-auto p-4 pb-32 space-y-4 w-full min-h-[100dvh]">
+        {/* Header */}
+        <div className="flex items-center justify-between pt-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">准备训练</h1>
+            <p className="text-xs text-[var(--text-tertiary)]">{exerciseBlocks.length} 个动作已添加</p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => {
+              setWorkoutPhase('idle')
+              setExerciseBlocks([])
+              localStorage.removeItem('workout_exercises')
+              localStorage.removeItem('workout_phase')
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Exercise List */}
+        <div className="space-y-3">
+          {exerciseBlocks.map((block, blockIndex) => (
+            <div key={blockIndex} className="bg-[var(--surface-2)] rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center">
+                    <Barbell className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{block.exercise.name}</p>
+                    <p className="text-xs text-[var(--text-disabled)]">{block.exercise.muscle_group}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setExerciseBlocks(prev => prev.filter((_, i) => i !== blockIndex))
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-[var(--surface-3)] text-[var(--text-disabled)]"
+                >
+                  <Trash className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="text-xs text-[var(--text-tertiary)]">
+                {block.sets.length} 组 x {block.sets[0]?.reps || '-'} 次
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add More Exercises */}
+        <button
+          onClick={() => setShowExercisePicker(true)}
+          className="w-full h-14 rounded-xl border border-dashed border-[var(--border-default)] flex items-center justify-center gap-2 text-sm text-[var(--text-tertiary)]"
+        >
+          <Plus className="h-5 w-5" />
+          添加动作
+        </button>
+
+        {/* Start Button */}
+        <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80">
+          <Button 
+            className="w-full h-14 text-lg font-bold rounded-xl gradient-accent"
+            onClick={handleStartWorkout}
+            disabled={saving || exerciseBlocks.length === 0}
+          >
+            {saving ? (
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <Play weight="fill" className="h-5 w-5 mr-2" />
+            )}
+            开始训练
+          </Button>
+        </div>
+
+        {/* Exercise Picker Dialog */}
+        <Dialog open={showExercisePicker} onOpenChange={setShowExercisePicker}>
+          <DialogContent className="bg-[var(--surface-2)] border-[var(--border-default)] rounded-2xl max-w-md">
+            <DialogHeader>
+              <DialogTitle>选择动作</DialogTitle>
+            </DialogHeader>
+            <div className="relative mb-3">
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-disabled)]" />
+              <Input
+                placeholder="搜索动作..."
+                value={exerciseSearch}
+                onChange={(e) => setExerciseSearch(e.target.value)}
+                className="pl-10 bg-[var(--surface-1)] border-[var(--border-default)]"
+              />
+            </div>
+            <div className="space-y-1 max-h-[50vh] overflow-y-auto">
+              {filteredExercises.map(exercise => (
+                <button
+                  key={exercise.id}
+                  onClick={() => {
+                    addExercise(exercise)
+                    setShowExercisePicker(false)
+                    setExerciseSearch('')
+                  }}
+                  className="w-full p-3 rounded-lg text-left hover:bg-[var(--surface-3)] transition-colors"
+                >
+                  <p className="text-sm font-medium">{exercise.name}</p>
+                  <p className="text-xs text-[var(--text-disabled)]">{exercise.muscle_group}</p>
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
+
+
 
   // ════════════════════════════════════════
   //  ACTIVE WORKOUT SCREEN
