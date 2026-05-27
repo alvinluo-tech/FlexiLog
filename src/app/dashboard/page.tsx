@@ -17,6 +17,7 @@ export default async function DashboardPage() {
     { data: sessions },
     { data: profile },
     { data: weightLogs },
+    { data: recentPRs },
   ] = await Promise.all([
     supabase
       .from('workout_sessions')
@@ -26,6 +27,7 @@ export default async function DashboardPage() {
       .limit(15),
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('body_weight_logs').select('*').eq('user_id', user.id).order('logged_at', { ascending: false }).limit(7),
+    supabase.from('personal_records').select('*, exercises (name, muscle_group)').eq('user_id', user.id).order('achieved_at', { ascending: false }).limit(5),
   ])
 
   const now = new Date()
@@ -88,5 +90,13 @@ export default async function DashboardPage() {
     }
   }) || []
 
-  return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak, volumeChange }} recentWorkouts={recentWorkouts} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
+  const formattedPRs = (recentPRs || []).map((pr: any) => ({
+    id: pr.id,
+    exerciseName: pr.exercises?.name || '未知动作',
+    recordType: pr.record_type as string,
+    value: Number(pr.value),
+    achievedAt: pr.achieved_at,
+  }))
+
+  return <DashboardClient stats={{ weeklyWorkouts: thisWeekSessions.length, targetWorkouts: profile?.training_days_per_week || 5, totalVolume, currentWeight, weightChange: currentWeight - prevWeight, streak, volumeChange }} recentWorkouts={recentWorkouts} recentPRs={formattedPRs} userName={user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'} />
 }

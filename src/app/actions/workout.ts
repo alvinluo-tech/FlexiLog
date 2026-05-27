@@ -31,12 +31,15 @@ export async function createWorkoutSession(templateId?: string) {
   return { data }
 }
 
-export async function endWorkoutSession(sessionId: string) {
+export async function endWorkoutSession(sessionId: string, notes?: string) {
   const supabase = await createClient()
+
+  const updateData: Record<string, any> = { ended_at: new Date().toISOString() }
+  if (notes !== undefined) updateData.notes = notes
 
   const { error } = await supabase
     .from('workout_sessions')
-    .update({ ended_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', sessionId)
 
   if (error) {
@@ -113,6 +116,20 @@ export async function addWorkoutSet(sessionId: string, exerciseId: string, setDa
   reps: number
   rpe?: number
 }) {
+  // Input validation
+  if (setData.weight_kg < 0) {
+    return { error: '重量不能为负数' }
+  }
+  if (setData.reps < 1) {
+    return { error: '次数至少为 1' }
+  }
+  if (setData.reps > 999) {
+    return { error: '次数不能超过 999' }
+  }
+  if (setData.rpe !== undefined && (setData.rpe < 1 || setData.rpe > 10)) {
+    return { error: 'RPE 必须在 1-10 之间' }
+  }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -219,6 +236,20 @@ export async function updateUserProfile(updates: {
   session_duration_minutes?: number
   equipment?: string
 }) {
+  // Input validation
+  if (updates.age !== undefined && (updates.age < 10 || updates.age > 120)) {
+    return { error: '年龄必须在 10-120 之间' }
+  }
+  if (updates.height_cm !== undefined && (updates.height_cm < 50 || updates.height_cm > 250)) {
+    return { error: '身高必须在 50-250 cm 之间' }
+  }
+  if (updates.weight_kg !== undefined && (updates.weight_kg < 20 || updates.weight_kg > 500)) {
+    return { error: '体重必须在 20-500 kg 之间' }
+  }
+  if (updates.body_fat_percentage !== undefined && (updates.body_fat_percentage < 1 || updates.body_fat_percentage > 60)) {
+    return { error: '体脂率必须在 1%-60% 之间' }
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   

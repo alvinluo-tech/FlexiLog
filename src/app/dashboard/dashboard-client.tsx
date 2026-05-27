@@ -1,14 +1,37 @@
 'use client'
 
 import { Progress } from '@/components/ui/progress'
-import { Barbell, TrendUp, Lightning, ArrowRight, Target, Flame, ChartLineUp } from '@phosphor-icons/react'
+import { Barbell, TrendUp, Lightning, ArrowRight, Target, Flame, ChartLineUp, Trophy, Medal } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
+
+interface PRItem {
+  id: string
+  exerciseName: string
+  recordType: string
+  value: number
+  achievedAt: string
+}
 
 interface Props {
   stats: { weeklyWorkouts: number; targetWorkouts: number; totalVolume: number; currentWeight: number; weightChange: number; streak: number; volumeChange: number }
   recentWorkouts: { id: string; name: string; date: string; exercises: number; duration: string; volume: number; isActive?: boolean }[]
+  recentPRs?: PRItem[]
   userName: string
+}
+
+const RECORD_TYPE_LABELS: Record<string, string> = {
+  max_weight: '最大重量',
+  max_volume: '最大训练量',
+  max_reps: '最大次数',
+  estimated_1rm: '预估1RM',
+}
+
+const RECORD_TYPE_UNITS: Record<string, string> = {
+  max_weight: 'kg',
+  max_volume: 'kg',
+  max_reps: '次',
+  estimated_1rm: 'kg',
 }
 
 // Framer motion variants for staggering child elements
@@ -27,7 +50,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
 }
 
-export default function DashboardClient({ stats, recentWorkouts, userName }: Props) {
+export default function DashboardClient({ stats, recentWorkouts, recentPRs = [], userName }: Props) {
   return (
     <motion.div 
       variants={containerVariants}
@@ -222,6 +245,48 @@ export default function DashboardClient({ stats, recentWorkouts, userName }: Pro
           </div>
         )}
       </motion.div>
+
+      {/* Personal Records */}
+      {recentPRs.length > 0 && (
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <h2 className="text-xl font-bold tracking-tight text-white">个人记录</h2>
+            <Trophy className="h-5 w-5 text-amber-400" />
+          </div>
+          <div className="space-y-2.5">
+            {recentPRs.map((pr, idx) => {
+              const diff = Math.floor((Date.now() - new Date(pr.achievedAt).getTime()) / 86400000)
+              const dateStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : diff < 7 ? diff + '天前' : new Date(pr.achievedAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+              return (
+                <motion.div
+                  key={pr.id}
+                  whileTap={{ scale: 0.98 }}
+                  className="card p-4 flex items-center justify-between bg-[var(--surface-1)] border border-amber-500/15 hover:border-amber-500/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-11 w-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                      <Medal weight="fill" className="h-5.5 w-5.5 text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-[15px] font-bold text-white">{pr.exerciseName}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                          {RECORD_TYPE_LABELS[pr.recordType] || pr.recordType}
+                        </span>
+                        <span className="text-[12px] text-[var(--text-tertiary)]">{dateStr}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-amber-400 data-number">{pr.value % 1 === 0 ? pr.value : pr.value.toFixed(1)}</span>
+                    <span className="text-sm text-amber-400/60 font-bold ml-0.5">{RECORD_TYPE_UNITS[pr.recordType] || ''}</span>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* Quick Actions (Floating bottom spacer helper) */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3.5">

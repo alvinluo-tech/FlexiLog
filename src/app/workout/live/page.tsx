@@ -14,7 +14,7 @@ export default async function WorkoutLivePage() {
   // Fetch exercises for the picker
   const { data: exercises } = await supabase
     .from('exercises')
-    .select('id, name, muscle_group')
+    .select('id, name, muscle_group, rest_seconds')
     .order('muscle_group')
     .order('name')
 

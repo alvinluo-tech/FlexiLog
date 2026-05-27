@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { 
   Play, Plus, Trash, X,
   Timer, Check, Barbell, FloppyDisk, CalendarBlank, Lightning,
-  MagnifyingGlass, DotsThreeVertical, PencilSimple
+  MagnifyingGlass, DotsThreeVertical, PencilSimple, Trophy
 } from '@phosphor-icons/react'
 import { createWorkoutSession, endWorkoutSession, addWorkoutSet, discardWorkoutSession, updateWorkoutSet, deleteWorkoutSet } from '@/app/actions/workout'
 import { deleteTemplate, renameTemplate } from '@/app/actions/templates'
+import { checkAndUpdatePRs } from '@/app/actions/records'
+import { getRecordLabel, getRecordUnit } from '@/lib/record-utils'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -18,6 +20,7 @@ interface Exercise {
   id: string
   name: string
   muscle_group: string
+  rest_seconds?: number | null
 }
 
 interface WorkoutSet {
@@ -72,6 +75,13 @@ export default function WorkoutLiveClient({
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [editingTemplateName, setEditingTemplateName] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [workoutNotes, setWorkoutNotes] = useState('')
+  
+  // PR notification state
+  const [prNotifications, setPrNotifications] = useState<{
+    exerciseName: string
+    prs: { type: string; value: number; previousValue: number }[]
+  } | null>(null)
   
   // Workout phase: idle -> preparing -> active -> completed
   const [workoutPhase, setWorkoutPhase] = useState<'idle' | 'preparing' | 'active' | 'completed'>(() => {
@@ -109,6 +119,12 @@ export default function WorkoutLiveClient({
         }
       } catch {}
     }
+
+    // Restore workout notes
+    const savedNotes = localStorage.getItem('workout_notes')
+    if (savedNotes) {
+      setWorkoutNotes(savedNotes)
+    }
   }, [])
 
   // Persist exercise blocks to localStorage whenever they change
@@ -124,6 +140,15 @@ export default function WorkoutLiveClient({
   useEffect(() => {
     localStorage.setItem('workout_phase', workoutPhase)
   }, [workoutPhase])
+
+  // Persist workout notes
+  useEffect(() => {
+    if (workoutNotes) {
+      localStorage.setItem('workout_notes', workoutNotes)
+    } else {
+      localStorage.removeItem('workout_notes')
+    }
+  }, [workoutNotes])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -233,7 +258,7 @@ export default function WorkoutLiveClient({
                   }
                 }),
                 previousData: matched ? (previousData[matched.id] || []) : [],
-                restSeconds: 90
+                restSeconds: matched?.rest_seconds ?? 90
               }
             })
             setExerciseBlocks(newBlocks)
@@ -302,7 +327,7 @@ export default function WorkoutLiveClient({
                   }
                 }),
                 previousData: matched ? (previousData[matched.id] || []) : [],
-                restSeconds: 90
+                restSeconds: matched?.rest_seconds ?? 90
               }
             })
             setExerciseBlocks(newBlocks)
@@ -364,6 +389,7 @@ export default function WorkoutLiveClient({
     localStorage.removeItem('ai_plan')
     localStorage.removeItem('workout_exercises')
     localStorage.removeItem('workout_phase')
+    localStorage.removeItem('workout_notes')
     
     setSaving(false)
     setShowDiscardConfirm(false)
@@ -372,9 +398,10 @@ export default function WorkoutLiveClient({
   const finishWorkout = useCallback(async () => {
     if (!sessionId) return
     setSaving(true)
-    await endWorkoutSession(sessionId)
+    await endWorkoutSession(sessionId, workoutNotes || undefined)
+    localStorage.removeItem('workout_notes')
     router.push('/dashboard')
-  }, [sessionId, router])
+  }, [sessionId, workoutNotes, router])
 
   // ── Exercise & Set Management ──
   // Helper: parse weight from various AI formats (number, "55-75kg", "20-30kg/只", etc.)
@@ -439,7 +466,7 @@ export default function WorkoutLiveClient({
       exercise,
       sets: [{ id: `set-${Date.now()}`, weight: '', reps: '', completed: false, saved: false }],
       previousData: prev || [],
-      restSeconds: 90,
+      restSeconds: exercise.rest_seconds ?? 90,
     }
     setExerciseBlocks(prev => [...prev, newBlock])
     setShowExercisePicker(false)
@@ -509,6 +536,7 @@ export default function WorkoutLiveClient({
       const reps = parseInt(repsStr) || 0
 
       if (weight > 0 && reps > 0) {
+        let savedSetId = set.id
         if (sessionId) {
           if (!set.saved || set.id.startsWith('set-')) {
             // Save new set to database
@@ -519,6 +547,7 @@ export default function WorkoutLiveClient({
             })
             
             if (result.data) {
+              savedSetId = result.data.id
               // Update set ID to database UUID and set saved to true
               setExerciseBlocks(prev => {
                 const updated = [...prev]
@@ -541,6 +570,18 @@ export default function WorkoutLiveClient({
             // If already saved, just update completed state in database
             await updateWorkoutSet(set.id, { completed: true })
             updateSet(blockIndex, setIndex, 'completed', true)
+          }
+          
+          // Check for new personal records
+          try {
+            const prResult = await checkAndUpdatePRs(userId, block.exercise.id, weight, reps, savedSetId.startsWith('set-') ? undefined : savedSetId)
+            if (prResult.newPRs.length > 0) {
+              setPrNotifications({ exerciseName: block.exercise.name, prs: prResult.newPRs })
+              // Auto-dismiss after 4 seconds
+              setTimeout(() => setPrNotifications(null), 4000)
+            }
+          } catch (e) {
+            console.error('PR check failed:', e)
           }
         } else {
           // No active session (should not happen), just update UI
@@ -566,6 +607,14 @@ export default function WorkoutLiveClient({
 
   const removeExercise = useCallback((blockIndex: number) => {
     setExerciseBlocks(prev => prev.filter((_, i) => i !== blockIndex))
+  }, [])
+
+  const updateRestSeconds = useCallback((blockIndex: number, seconds: number) => {
+    setExerciseBlocks(prev => {
+      const updated = [...prev]
+      updated[blockIndex] = { ...updated[blockIndex], restSeconds: Math.max(15, Math.min(600, seconds)) }
+      return updated
+    })
   }, [])
 
   const removeSet = useCallback(async (blockIndex: number, setIndex: number) => {
@@ -788,8 +837,10 @@ export default function WorkoutLiveClient({
             onClick={() => {
               setWorkoutPhase('idle')
               setExerciseBlocks([])
+              setWorkoutNotes('')
               localStorage.removeItem('workout_exercises')
               localStorage.removeItem('workout_phase')
+              localStorage.removeItem('workout_notes')
             }}
           >
             <X className="h-4 w-4" />
@@ -819,8 +870,12 @@ export default function WorkoutLiveClient({
                   <Trash className="h-4 w-4" />
                 </button>
               </div>
-              <div className="text-xs text-[var(--text-tertiary)]">
-                {block.sets.length} 组 x {block.sets[0]?.reps || '-'} 次
+              <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
+                <span>{block.sets.length} 组 x {block.sets[0]?.reps || '-'} 次</span>
+                <span className="flex items-center gap-1">
+                  <Timer className="h-3 w-3" />
+                  {block.restSeconds}s
+                </span>
               </div>
             </div>
           ))}
@@ -834,6 +889,18 @@ export default function WorkoutLiveClient({
           <Plus className="h-5 w-5" />
           添加动作
         </button>
+
+        {/* Workout Notes */}
+        <div className="bg-[var(--surface-2)] rounded-xl p-3.5">
+          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">📝 训练备注</p>
+          <textarea
+            value={workoutNotes}
+            onChange={(e) => setWorkoutNotes(e.target.value)}
+            placeholder="记录今天的训练感受、身体状态..."
+            rows={2}
+            className="w-full bg-[var(--surface-1)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none resize-none"
+          />
+        </div>
 
         {/* Start Button */}
         <div className="fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-80">
@@ -929,6 +996,22 @@ export default function WorkoutLiveClient({
         </div>
       </div>
 
+      {/* ── Workout Notes (collapsible) ── */}
+      <div className="px-4 pt-2">
+        <details className="group">
+          <summary className="text-[11px] font-bold text-[var(--text-tertiary)] cursor-pointer hover:text-white transition-colors select-none">
+            📝 训练备注 {workoutNotes && <span className="text-[var(--accent)]">•</span>}
+          </summary>
+          <textarea
+            value={workoutNotes}
+            onChange={(e) => setWorkoutNotes(e.target.value)}
+            placeholder="记录今天的训练感受..."
+            rows={2}
+            className="w-full mt-2 bg-[var(--surface-1)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none resize-none"
+          />
+        </details>
+      </div>
+
       {/* ── Exercise Blocks ── */}
       <div className="px-4 pt-3 space-y-3">
         {exerciseBlocks.map((block, blockIndex) => (
@@ -944,12 +1027,32 @@ export default function WorkoutLiveClient({
                   {block.exercise.muscle_group}
                 </p>
               </div>
-              <button 
-                onClick={() => removeExercise(blockIndex)} 
-                className="h-8 w-8 flex items-center justify-center text-[var(--text-disabled)] hover:text-[var(--danger)] rounded-lg active:scale-90 transition-all"
-              >
-                <Trash className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                {/* Rest Timer Adjustment */}
+                <div className="flex items-center gap-0.5 bg-[var(--surface-2)] rounded-lg px-1.5 py-1">
+                  <button
+                    onClick={() => updateRestSeconds(blockIndex, block.restSeconds - 15)}
+                    className="w-5 h-5 flex items-center justify-center text-[var(--text-tertiary)] hover:text-white text-[10px] font-bold rounded active:scale-90 transition-all"
+                  >
+                    −
+                  </button>
+                  <span className="text-[10px] font-bold text-[var(--accent)] data-number min-w-[28px] text-center">
+                    {block.restSeconds}s
+                  </span>
+                  <button
+                    onClick={() => updateRestSeconds(blockIndex, block.restSeconds + 15)}
+                    className="w-5 h-5 flex items-center justify-center text-[var(--text-tertiary)] hover:text-white text-[10px] font-bold rounded active:scale-90 transition-all"
+                  >
+                    +
+                  </button>
+                </div>
+                <button 
+                  onClick={() => removeExercise(blockIndex)} 
+                  className="h-8 w-8 flex items-center justify-center text-[var(--text-disabled)] hover:text-[var(--danger)] rounded-lg active:scale-90 transition-all"
+                >
+                  <Trash className="h-4 w-4" />
+                </button>
+              </div>
             </div>
             
             {/* Set Table */}
@@ -1184,6 +1287,12 @@ export default function WorkoutLiveClient({
                 <div className="flex gap-1.5">
                   <button 
                     className="h-8 px-2 rounded-md border border-[var(--border-default)] text-[11px] font-bold text-white data-number active:scale-90 transition-transform hover:bg-white/5" 
+                    onClick={() => setRestTimeLeft(prev => Math.max(0, prev - 15))}
+                  >
+                    -15s
+                  </button>
+                  <button 
+                    className="h-8 px-2 rounded-md border border-[var(--border-default)] text-[11px] font-bold text-white data-number active:scale-90 transition-transform hover:bg-white/5" 
                     onClick={() => setRestTimeLeft(prev => prev + 30)}
                   >
                     +30s
@@ -1195,6 +1304,56 @@ export default function WorkoutLiveClient({
                     结束休息
                   </button>
                 </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── PR Celebration Toast ── */}
+      <AnimatePresence>
+        {prNotifications && (
+          <motion.div
+            initial={{ y: -100, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -100, opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed top-4 left-4 right-4 max-w-md mx-auto z-[60]"
+          >
+            <div
+              onClick={() => setPrNotifications(null)}
+              className="bg-gradient-to-r from-amber-500/20 to-yellow-500/10 backdrop-blur-xl border border-amber-400/30 rounded-2xl shadow-2xl shadow-amber-500/10 p-4 cursor-pointer"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <motion.div
+                  animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <Trophy weight="fill" className="h-6 w-6 text-amber-400" />
+                </motion.div>
+                <div>
+                  <p className="text-sm font-extrabold text-amber-400">🎉 新个人记录！</p>
+                  <p className="text-xs text-amber-300/70 font-medium">{prNotifications.exerciseName}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {prNotifications.prs.map((pr, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-amber-200/80">
+                      {getRecordLabel(pr.type as any)}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {pr.previousValue > 0 && (
+                        <span className="text-[11px] text-amber-200/40 line-through data-number">
+                          {pr.previousValue % 1 === 0 ? pr.previousValue : pr.previousValue.toFixed(1)}{getRecordUnit(pr.type as any)}
+                        </span>
+                      )}
+                      <span className="text-sm font-black text-amber-400 data-number">
+                        {pr.value % 1 === 0 ? pr.value : pr.value.toFixed(1)}{getRecordUnit(pr.type as any)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </motion.div>
