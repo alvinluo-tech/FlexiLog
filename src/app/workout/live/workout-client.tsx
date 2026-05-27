@@ -206,7 +206,10 @@ export default function WorkoutLiveClient({
                   : { id: 'template-' + ex.name, name: ex.name, muscle_group: todayPlan.focus || 'general' },
                 sets: Array.from({ length: ex.sets || 3 }, (_, i) => ({
                   id: 'set-' + Date.now() + '-' + i,
-                  weight: '', reps: ex.reps || '', completed: false, saved: false
+                  weight: '',
+                  reps: String(ex.reps || '').replace(/[^0-9]/g, '') || '',
+                  completed: false,
+                  saved: false
                 })),
                 previousData: matched ? (previousData[matched.id] || []) : [],
                 restSeconds: 90
