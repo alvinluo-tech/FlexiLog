@@ -44,10 +44,10 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
-  // If user is created and confirmed (email confirmation disabled)
+  // If user is created and has session (email confirmation disabled)
   if (data.user && data.session) {
-    // Create user profile using the authenticated session
-    await supabase.from('user_profiles').upsert({
+    // Create user profile
+    const { error: profileError } = await supabase.from('user_profiles').insert({
       id: data.user.id,
       gender: null,
       age: null,
@@ -62,15 +62,20 @@ export async function signUp(formData: FormData) {
       equipment: null,
     })
     
+    if (profileError) {
+      console.error('Profile creation error:', profileError)
+    }
+    
     revalidatePath('/', 'layout')
     redirect('/dashboard')
   }
   
-  // If email confirmation is required
+  // If email confirmation is required (no session)
   if (data.user && !data.session) {
     return { success: '请检查邮箱确认注册链接' }
   }
 
+  // Fallback
   revalidatePath('/', 'layout')
   redirect('/dashboard')
 }
@@ -100,7 +105,7 @@ export async function ensureUserProfile(userId: string) {
   
   if (!existing) {
     // Create profile if it doesn't exist
-    await supabase.from('user_profiles').upsert({
+    const { error } = await supabase.from('user_profiles').insert({
       id: userId,
       gender: null,
       age: null,
@@ -114,5 +119,9 @@ export async function ensureUserProfile(userId: string) {
       session_duration_minutes: null,
       equipment: null,
     })
+    
+    if (error) {
+      console.error('ensureUserProfile error:', error)
+    }
   }
 }

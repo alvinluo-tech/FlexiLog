@@ -6,22 +6,64 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Lightning, Envelope, Lock, User } from '@phosphor-icons/react'
+import { Lightning, Envelope, Lock, User, CheckCircle } from '@phosphor-icons/react'
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState('')
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
+    
+    const emailValue = formData.get('email') as string
+    setEmail(emailValue)
     
     const result = await signUp(formData)
     
     if (result?.error) {
       setError(result.error)
       setLoading(false)
+    } else if (result?.success) {
+      setSuccess(true)
+      setLoading(false)
     }
+    // If no error and no success message, it means redirect happened
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--surface-0)]">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="h-12 w-12 rounded-xl bg-[var(--accent)] flex items-center justify-center mx-auto mb-4">
+              <Lightning weight="fill" className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">FlexiLog</h1>
+          </div>
+
+          <Card className="card-surface border rounded-[var(--radius-xl)]">
+            <CardContent className="p-8 text-center">
+              <div className="h-16 w-16 rounded-full bg-[var(--success-muted)] flex items-center justify-center mx-auto mb-4">
+                <CheckCircle weight="fill" className="h-10 w-10 text-[var(--success)]" />
+              </div>
+              <h2 className="text-lg font-semibold mb-2">注册成功！</h2>
+              <p className="text-sm text-[var(--text-tertiary)] mb-6">
+                我们已向 <span className="text-[var(--accent)]">{email}</span> 发送了验证邮件。
+              </p>
+              <p className="text-sm text-[var(--text-tertiary)] mb-6">
+                请检查你的邮箱并点击验证链接完成注册。
+              </p>
+              <Link href="/login">
+                <Button className="w-full">返回登录</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
