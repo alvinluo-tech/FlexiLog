@@ -60,6 +60,12 @@ export default async function WorkoutLivePage() {
   let initialSessionStartTime = null
   let initialExerciseBlocks: any[] = []
 
+  // Build rest_seconds lookup from exercises
+  const restSecondsMap: Record<string, number> = {}
+  for (const ex of exercises || []) {
+    if (ex.rest_seconds) restSecondsMap[ex.id] = ex.rest_seconds
+  }
+
   if (activeSession) {
     initialSessionId = activeSession.id
     initialSessionStartTime = new Date(activeSession.started_at).getTime()
@@ -80,6 +86,7 @@ export default async function WorkoutLivePage() {
           },
           sets: [],
           previousData: previousData[exerciseId] || [],
+          restSeconds: restSecondsMap[exerciseId] || 90,
           collapsed: false
         }
       }

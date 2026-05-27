@@ -316,18 +316,23 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                                       <p className="text-sm font-bold text-white leading-tight">{ex.name}</p>
                                       <p className="text-[11px] text-[var(--text-tertiary)] font-semibold mt-0.5">
                                         {ex.sets} 组 x {ex.reps} 次
-                                        {(ex.weight_kg || ex.weight_ref) && (
-                                          <span className="text-[var(--accent)] ml-1.5">
-                                            @ {ex.weight_kg ? `${ex.weight_kg}kg` : ex.weight_ref}
-                                          </span>
-                                        )}
+                                        {(() => {
+                                          const w = ex.weight_kg ?? ex.weight ?? ex.weight_ref
+                                          if (!w) return null
+                                          const num = typeof w === 'number' ? w : parseFloat(String(w))
+                                          return (
+                                            <span className="text-[var(--accent)] ml-1.5">
+                                              @ {num > 0 ? `${num}kg` : w}
+                                            </span>
+                                          )
+                                        })()}
                                       </p>
                                     </div>
                                   </div>
                                   {ex.rest && (
                                     <Badge variant="outline" className="text-[10px] font-bold border-white/5 text-[var(--text-secondary)] rounded-md py-0.5 px-1.5">
                                       <Clock className="h-3 w-3 mr-1 text-[var(--accent)]" />
-                                      {ex.rest}秒休息
+                                      {String(ex.rest).replace(/[^0-9]/g, '')}秒休息
                                     </Badge>
                                   )}
                                 </div>

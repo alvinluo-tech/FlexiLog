@@ -413,7 +413,14 @@ export default function WorkoutLiveClient({
           }
         }),
         previousData: matched ? (previousData[matched.id] || []) : [],
-        restSeconds: matched?.rest_seconds ?? 90
+        restSeconds: (() => {
+          // Parse rest from AI plan: "60s", "90", "120秒" → number
+          if (ex.rest) {
+            const n = parseInt(String(ex.rest).replace(/[^0-9]/g, ''))
+            if (!isNaN(n) && n > 0) return n
+          }
+          return matched?.rest_seconds ?? 90
+        })()
       }
     })
     setExerciseBlocks(newBlocks)
@@ -984,7 +991,12 @@ export default function WorkoutLiveClient({
                 </button>
               </div>
               <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-                <span>{block.sets.length} 组 x {block.sets[0]?.reps || '-'} 次</span>
+                <span>
+                  {block.sets.length} 组 x {block.sets[0]?.reps || '-'} 次
+                  {block.sets[0]?.weight && Number(block.sets[0].weight) > 0 && (
+                    <span className="text-[var(--accent)] ml-1.5">@ {block.sets[0].weight}kg</span>
+                  )}
+                </span>
                 <span className="flex items-center gap-1">
                   <Timer className="h-3 w-3" />
                   {block.restSeconds}s

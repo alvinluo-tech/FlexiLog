@@ -70,7 +70,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
    - sets: 组数
    - reps: 次数范围（如"8-12"）
    - weight_kg: 推荐起始重量（kg），根据用户体重和健身年限给出合理建议
-   - rest: 组间休息时间
+   - rest: 组间休息秒数（纯数字，如90）
 
 重量建议原则：
 - 新手(1年以下): 体重的30-50%
@@ -167,7 +167,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
           name: ex.name || '',
           sets: ex.sets || 3,
           reps: String(ex.reps || '10'),
-          weight_kg: ex.weight_kg || ex.weight || undefined,
+          weight_kg: ex.weight_kg ?? ex.weight ?? ex.weight_ref ?? undefined,
           rest: ex.rest || '90s',
         })),
       })),
