@@ -35,7 +35,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="space-y-4">
+        <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-[13px] text-[var(--text-secondary)] font-medium">Email</label>
             <div className="relative">
@@ -71,11 +71,9 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form action={handleSubmit}>
-            <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl text-[16px] font-semibold">
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
+          <Button type="submit" disabled={loading} className="w-full h-14 rounded-xl text-[16px] font-semibold">
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
 
           <div className="flex items-center justify-between mt-2">
             <Link href="/forgot-password" className="text-[14px] text-[var(--accent)] font-medium">
@@ -85,7 +83,7 @@ export default function LoginPage() {
               Create account
             </Link>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )
