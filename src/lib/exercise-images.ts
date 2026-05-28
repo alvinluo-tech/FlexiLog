@@ -48,5 +48,14 @@ export function getDemoImage(name: string): string | null {
   if (n.includes('dumbbell row') || n.includes('哑铃单臂划船') || n.includes('哑铃俯身划船')) return '/images/exercises/dumbbell_row.png'
   if (n.includes('leg press') || n.includes('腿举')) return '/images/exercises/leg_press.png'
   if (n.includes('leg curl') || n.includes('腿弯举')) return '/images/exercises/leg_curl.png'
+  if (n.includes('leg extension') || n.includes('腿屈伸')) return '/images/exercises/leg_extension.png'
+  if (n.includes('dumbbell shoulder press') || n.includes('哑铃坐姿推举') || n.includes('哑铃站姿推举') || n.includes('哑铃推举')) return '/images/exercises/dumbbell_shoulder_press.png'
+  if (n.includes('calf raise') || n.includes('提踵')) return '/images/exercises/calf_raises.png'
+
+  // Approximate matches (same muscle group, visually similar)
+  if (n.includes('dumbbell bicep curl') || n.includes('哑铃交替弯举') || n.includes('哑铃斜托弯举') || n.includes('哑铃蜘蛛弯举') || n.includes('哑铃集中弯举') || n.includes('上斜哑铃弯举')) return '/images/exercises/hammer_curl.png'
+  if (n.includes('side plank') || n.includes('侧平板支撑')) return '/images/exercises/plank.png'
+  if (n.includes('bulgarian split squat') || n.includes('保加利亚分腿蹲')) return '/images/exercises/squat.png'
+  
   return null
 }
