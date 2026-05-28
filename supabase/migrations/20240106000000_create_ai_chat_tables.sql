@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS ai_conversations (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- AI Messages table
 CREATE TABLE IF NOT EXISTS ai_messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -17,33 +16,26 @@ CREATE TABLE IF NOT EXISTS ai_messages (
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Indexes
 CREATE INDEX idx_ai_conversations_user ON ai_conversations(user_id);
 CREATE INDEX idx_ai_messages_conversation ON ai_messages(conversation_id);
 CREATE INDEX idx_ai_messages_created ON ai_messages(created_at);
-
 -- RLS
 ALTER TABLE ai_conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_messages ENABLE ROW LEVEL SECURITY;
-
 -- Policies for ai_conversations
 CREATE POLICY "Users can view own conversations"
   ON ai_conversations FOR SELECT
   USING (auth.uid() = user_id);
-
 CREATE POLICY "Users can create own conversations"
   ON ai_conversations FOR INSERT
   WITH CHECK (auth.uid() = user_id);
-
 CREATE POLICY "Users can update own conversations"
   ON ai_conversations FOR UPDATE
   USING (auth.uid() = user_id);
-
 CREATE POLICY "Users can delete own conversations"
   ON ai_conversations FOR DELETE
   USING (auth.uid() = user_id);
-
 -- Policies for ai_messages
 CREATE POLICY "Users can view messages from own conversations"
   ON ai_messages FOR SELECT
@@ -54,7 +46,6 @@ CREATE POLICY "Users can view messages from own conversations"
       AND ai_conversations.user_id = auth.uid()
     )
   );
-
 CREATE POLICY "Users can create messages in own conversations"
   ON ai_messages FOR INSERT
   WITH CHECK (
@@ -64,13 +55,11 @@ CREATE POLICY "Users can create messages in own conversations"
       AND ai_conversations.user_id = auth.uid()
     )
   );
-
 -- Permissions
 GRANT SELECT, INSERT, UPDATE, DELETE ON ai_conversations TO authenticated;
 GRANT SELECT, INSERT ON ai_messages TO authenticated;
 GRANT SELECT ON ai_conversations TO anon;
 GRANT SELECT ON ai_messages TO anon;
-
 -- Function to update conversation timestamp
 CREATE OR REPLACE FUNCTION update_conversation_timestamp()
 RETURNS TRIGGER AS $$
@@ -79,7 +68,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_conversation_on_message
   AFTER INSERT ON ai_messages
   FOR EACH ROW

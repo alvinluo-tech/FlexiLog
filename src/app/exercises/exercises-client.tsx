@@ -24,6 +24,7 @@ interface Exercise {
   tips: string | null
   rest_seconds?: number | null
   is_custom: boolean
+  equipment?: string | null
 }
 
 const muscleGroups = [
@@ -199,22 +200,26 @@ function MuscleGroupGraphic({ group, size = 'sm' }: { group: string; size?: 'sm'
 }
 
 // High-Fidelity Metadata Generation Engine
-function getExerciseMeta(name: string, muscleGroup: string) {
+function getExerciseMeta(ex: Exercise) {
+  const name = ex.name
+  const muscleGroup = ex.muscle_group
   const n = name.toLowerCase()
-  let equipment = '自重'
+  let equipment = ex.equipment || '自重'
   let difficulty = '入门'
   let secondary: string[] = []
 
-  // Equipment Mapping
-  if (n.includes('barbell') || n.includes('bench press') || n.includes('deadlift') || n.includes('squat') || n.includes('overhead press')) {
-    equipment = '杠铃'
-  } else if (n.includes('dumbbell') || n.includes('lateral raise') || n.includes('hammer')) {
-    equipment = '哑铃'
-  } else if (n.includes('cable') || n.includes('pulldown') || n.includes('flyes') || n.includes('face pull') || n.includes('pushdown') || n.includes('crunch')) {
-    equipment = '绳索器械'
-  } else if (n.includes('press') || n.includes('curl') || n.includes('raise')) {
-    if (n.includes('machine') || n.includes('leg press') || n.includes('leg curl')) {
-      equipment = '固定器械'
+  // Equipment Mapping Fallback
+  if (!ex.equipment) {
+    if (n.includes('barbell') || n.includes('bench press') || n.includes('deadlift') || n.includes('squat') || n.includes('overhead press')) {
+      equipment = '杠铃'
+    } else if (n.includes('dumbbell') || n.includes('lateral raise') || n.includes('hammer')) {
+      equipment = '哑铃'
+    } else if (n.includes('cable') || n.includes('pulldown') || n.includes('flyes') || n.includes('face pull') || n.includes('pushdown') || n.includes('crunch')) {
+      equipment = '绳索'
+    } else if (n.includes('press') || n.includes('curl') || n.includes('raise')) {
+      if (n.includes('machine') || n.includes('leg press') || n.includes('leg curl')) {
+        equipment = '器械'
+      }
     }
   }
 
@@ -266,7 +271,9 @@ const getDemoImage = (name: string) => {
 }
 
 // Equipment type detection from exercise name (Chinese)
-function getEquipmentType(name: string): string {
+function getEquipmentType(ex: Exercise): string {
+  if (ex.equipment) return ex.equipment;
+  const name = ex.name;
   if (/壶铃/.test(name)) return '壶铃'
   if (/杠铃|T杠|曲杠|窄握杠铃|背后杠铃/.test(name)) return '杠铃'
   if (/哑铃/.test(name)) return '哑铃'
@@ -575,7 +582,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
                 {/* Meta details Stats Bar */}
                 {(() => {
-                  const meta = getExerciseMeta(selectedExercise.name, selectedExercise.muscle_group)
+                  const meta = getExerciseMeta(selectedExercise)
                   return (
                     <>
                       <div className="grid grid-cols-2 gap-2.5">
@@ -774,7 +781,7 @@ function ExerciseList({ exercises, onSelect, usageCounts }: { exercises: Exercis
   const grouped = useMemo(() => {
     const map: Record<string, Exercise[]> = {}
     for (const ex of exercises) {
-      const eq = getEquipmentType(ex.name)
+      const eq = getEquipmentType(ex)
       if (!map[eq]) map[eq] = []
       map[eq].push(ex)
     }

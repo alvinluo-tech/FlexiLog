@@ -1,6 +1,5 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Exercise Library
 CREATE TABLE exercises (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -12,7 +11,6 @@ CREATE TABLE exercises (
   is_custom BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Workout Templates
 CREATE TABLE workout_templates (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -21,7 +19,6 @@ CREATE TABLE workout_templates (
   exercises UUID[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Workout Sessions
 CREATE TABLE workout_sessions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -31,7 +28,6 @@ CREATE TABLE workout_sessions (
   ended_at TIMESTAMPTZ,
   notes TEXT
 );
-
 -- Workout Sets
 CREATE TABLE workout_sets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -45,7 +41,6 @@ CREATE TABLE workout_sets (
   rest_seconds INTEGER,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- User Profiles
 CREATE TABLE user_profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
@@ -63,7 +58,6 @@ CREATE TABLE user_profiles (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Body Weight Logs
 CREATE TABLE body_weight_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -71,7 +65,6 @@ CREATE TABLE body_weight_logs (
   weight_kg DECIMAL(5,1) NOT NULL,
   logged_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- AI Plans
 CREATE TABLE ai_plans (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -80,14 +73,12 @@ CREATE TABLE ai_plans (
   plan_data JSONB NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes
 CREATE INDEX idx_exercises_muscle_group ON exercises(muscle_group);
 CREATE INDEX idx_workout_sets_session ON workout_sets(session_id);
 CREATE INDEX idx_workout_sets_exercise ON workout_sets(exercise_id);
 CREATE INDEX idx_body_weight_logs_user ON body_weight_logs(user_id);
 CREATE INDEX idx_workout_sessions_user ON workout_sessions(user_id);
-
 -- Enable RLS
 ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workout_templates ENABLE ROW LEVEL SECURITY;
@@ -96,22 +87,18 @@ ALTER TABLE workout_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE body_weight_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_plans ENABLE ROW LEVEL SECURITY;
-
 -- RLS Policies
 -- Exercises: public read, authenticated write for custom exercises
 CREATE POLICY "Exercises are viewable by everyone" ON exercises FOR SELECT USING (true);
 CREATE POLICY "Users can create custom exercises" ON exercises FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND is_custom = true);
 CREATE POLICY "Users can update own custom exercises" ON exercises FOR UPDATE USING (auth.uid() IS NOT NULL AND is_custom = true);
-
 -- Workout Templates: public read
 CREATE POLICY "Templates are viewable by everyone" ON workout_templates FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can create templates" ON workout_templates FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
 -- Workout Sessions: user-scoped
 CREATE POLICY "Users can view own sessions" ON workout_sessions FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create own sessions" ON workout_sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own sessions" ON workout_sessions FOR UPDATE USING (auth.uid() = user_id);
-
 -- Workout Sets: through session ownership
 CREATE POLICY "Users can view own sets" ON workout_sets FOR SELECT USING (
   EXISTS (SELECT 1 FROM workout_sessions WHERE workout_sessions.id = workout_sets.session_id AND workout_sessions.user_id = auth.uid())
@@ -122,20 +109,16 @@ CREATE POLICY "Users can create own sets" ON workout_sets FOR INSERT WITH CHECK 
 CREATE POLICY "Users can update own sets" ON workout_sets FOR UPDATE USING (
   EXISTS (SELECT 1 FROM workout_sessions WHERE workout_sessions.id = workout_sets.session_id AND workout_sessions.user_id = auth.uid())
 );
-
 -- User Profiles: user-scoped
 CREATE POLICY "Users can view own profile" ON user_profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can create own profile" ON user_profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = id);
-
 -- Body Weight Logs: user-scoped
 CREATE POLICY "Users can view own weight logs" ON body_weight_logs FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create own weight logs" ON body_weight_logs FOR INSERT WITH CHECK (auth.uid() = user_id);
-
 -- AI Plans: user-scoped
 CREATE POLICY "Users can view own plans" ON ai_plans FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can create own plans" ON ai_plans FOR INSERT WITH CHECK (auth.uid() = user_id);
-
 -- Seed data: Basic exercises
 INSERT INTO exercises (name, muscle_group, description, tips, is_custom) VALUES
 -- Chest
