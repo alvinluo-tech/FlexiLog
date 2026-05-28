@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ensureUserProfile } from '@/app/actions/auth'
+import { calculateSessionVolume, calculateTotalVolume } from '@/lib/volume-utils'
 import DashboardClient from './dashboard-client'
 
 export default async function DashboardPage() {
@@ -36,9 +37,7 @@ export default async function DashboardPage() {
   weekStart.setHours(0, 0, 0, 0)
 
   const thisWeekSessions = sessions?.filter((s: any) => new Date(s.started_at) >= weekStart) || []
-  const totalVolume = thisWeekSessions.reduce((sum: number, s: any) => {
-    return sum + (s.workout_sets || []).reduce((s: number, set: any) => s + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
-  }, 0)
+  const totalVolume = calculateTotalVolume(thisWeekSessions)
   // Calculate last week's volume for comparison
   const lastWeekStart = new Date(weekStart)
   lastWeekStart.setDate(lastWeekStart.getDate() - 7)
@@ -46,9 +45,7 @@ export default async function DashboardPage() {
     const d = new Date(s.started_at)
     return d >= lastWeekStart && d < weekStart
   }) || []
-  const lastWeekVolume = lastWeekSessions.reduce((sum: number, s: any) => {
-    return sum + (s.workout_sets || []).reduce((s: number, set: any) => s + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
-  }, 0)
+  const lastWeekVolume = calculateTotalVolume(lastWeekSessions)
   const volumeChange = lastWeekVolume > 0 ? ((totalVolume - lastWeekVolume) / lastWeekVolume) * 100 : 0
 
 
@@ -75,7 +72,7 @@ export default async function DashboardPage() {
     const dur = s.ended_at 
       ? Math.max(1, Math.round((new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) / 60000))
       : 0
-    const vol = sets.reduce((sum: number, x: any) => sum + (Number(x.weight_kg) || 0) * (x.reps || 0), 0)
+    const vol = calculateSessionVolume(sets)
     const diff = Math.floor((now.getTime() - new Date(s.started_at).getTime()) / 86400000)
     const dateStr = diff === 0 ? '今天' : diff === 1 ? '昨天' : diff < 7 ? diff + '天前' : new Date(s.started_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
     

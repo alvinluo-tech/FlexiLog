@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Barbell, Clock, TrendUp, CaretDown, CaretUp, ChartLineUp, DownloadSimple, Funnel } from '@phosphor-icons/react'
 import dynamic from 'next/dynamic'
+import { calculateSessionVolume } from '@/lib/volume-utils'
 
 const WeightChart = dynamic(() => import('@/components/charts/weight-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
 const VolumeChart = dynamic(() => import('@/components/charts/volume-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
@@ -90,7 +91,7 @@ export default function HistoryClient({ history: initialHistory, weightChartData
     return sessions.map(session => {
       const sets = session.workout_sets || []
       const exercises: string[] = [...new Set(sets.map((s: any) => s.exercises?.name).filter(Boolean))] as string[]
-      const volume = sets.reduce((sum: number, s: any) => sum + (Number(s.weight_kg) || 0) * (s.reps || 0), 0)
+      const volume = calculateSessionVolume(sets)
       const duration = session.ended_at
         ? Math.round((new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 60000)
         : 0
