@@ -55,10 +55,35 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const loadConversations = useCallback(async () => {
+    const result = await getConversations();
+    if (result.data) {
+      setConversations(result.data);
+      // Auto-select the most recent conversation on initial load
+      if (result.data.length > 0 && !currentConvId) {
+        setCurrentConvId(result.data[0].id);
+      }
+    }
+  }, [currentConvId]);
+
+  const loadMessages = useCallback(async (convId: string) => {
+    const result = await getMessages(convId);
+    if (result.data) {
+      setMessages(
+        result.data.map((m) => ({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          metadata: m.metadata,
+        }))
+      );
+    }
+  }, []);
+
   // Load conversations on mount
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [loadConversations]);
 
   // Load messages when conversation changes
   useEffect(() => {
@@ -67,7 +92,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
     } else {
       setMessages([]);
     }
-  }, [currentConvId]);
+  }, [currentConvId, loadMessages]);
 
   // Auto scroll to bottom with smooth springs
   useEffect(() => {
@@ -82,31 +107,6 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
       textareaRef.current.style.height = `${Math.min(scrollHeight, 160)}px`;
     }
   }, [input]);
-
-  const loadConversations = async () => {
-    const result = await getConversations();
-    if (result.data) {
-      setConversations(result.data);
-      // Auto-select the most recent conversation on initial load
-      if (result.data.length > 0 && !currentConvId) {
-        setCurrentConvId(result.data[0].id);
-      }
-    }
-  };
-
-  const loadMessages = async (convId: string) => {
-    const result = await getMessages(convId);
-    if (result.data) {
-      setMessages(
-        result.data.map((m) => ({
-          id: m.id,
-          role: m.role as "user" | "assistant",
-          content: m.content,
-          metadata: m.metadata,
-        }))
-      );
-    }
-  };
 
   const startNewConversation = () => {
     setCurrentConvId(null);
@@ -439,6 +439,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
               onKeyDown={handleKeyDown}
               placeholder="问问 AI 健身教练..."
               disabled={loading}
+              aria-label="消息输入"
               className="w-full bg-transparent focus:outline-none border-none py-3.5 pl-5 pr-2 text-xs text-white font-medium resize-none min-h-[48px] max-h-[160px] no-scrollbar leading-relaxed"
             />
 

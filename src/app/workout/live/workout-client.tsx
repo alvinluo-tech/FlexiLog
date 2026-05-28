@@ -1038,12 +1038,13 @@ export default function WorkoutLiveClient({
         {/* Workout Notes */}
         <div className="bg-[var(--surface-2)] rounded-xl p-3.5">
           <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">📝 训练备注</p>
-          <textarea
-            value={workoutNotes}
-            onChange={(e) => setWorkoutNotes(e.target.value)}
-            placeholder="记录今天的训练感受、身体状态..."
-            rows={2}
-            className="w-full bg-[var(--surface-1)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none resize-none"
+            <textarea
+              value={workoutNotes}
+              onChange={(e) => setWorkoutNotes(e.target.value)}
+              placeholder="记录今天的训练感受、身体状态..."
+              rows={2}
+              aria-label="训练备注"
+              className="w-full bg-[var(--surface-1)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none resize-none"
           />
         </div>
 
@@ -1152,6 +1153,7 @@ export default function WorkoutLiveClient({
             onChange={(e) => setWorkoutNotes(e.target.value)}
             placeholder="记录今天的训练感受..."
             rows={2}
+            aria-label="训练备注"
             className="w-full mt-2 bg-[var(--surface-1)] border border-[var(--border-default)] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[var(--text-disabled)] focus:border-[var(--accent)] focus:outline-none resize-none"
           />
         </details>
