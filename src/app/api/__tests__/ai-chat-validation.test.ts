@@ -11,15 +11,15 @@ describe('ai-chat input validation', () => {
     const MAX_MESSAGE = 2000
 
     it('rejects empty message', () => {
-      const message = ''
-      const isValid = message && typeof message === 'string' && message.trim().length > 0
-      expect(isValid).toBeFalsy()
+      const message: string = ''
+      const isValid = message.length > 0
+      expect(isValid).toBe(false)
     })
 
     it('rejects whitespace-only message', () => {
-      const message = '   '
-      const isValid = message && typeof message === 'string' && message.trim().length > 0
-      expect(isValid).toBeFalsy()
+      const message: string = '   '
+      const isValid = message.trim().length > 0
+      expect(isValid).toBe(false)
     })
 
     it('rejects message exceeding 2000 chars', () => {

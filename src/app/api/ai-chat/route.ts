@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
-import { AI_MODEL_NAME, AI_CHAT_MAX_TOKENS, AI_TEMPERATURE, CONVERSATIONS_LIMIT } from '@/lib/constants'
+import { AI_MODEL_NAME, AI_REQUEST_TIMEOUT_MS, AI_CHAT_MAX_TOKENS, AI_TEMPERATURE, CONVERSATIONS_LIMIT } from '@/lib/constants'
 import type { DayPlan, ExercisePlan } from '@/types'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

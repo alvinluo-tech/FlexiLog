@@ -9,19 +9,19 @@ describe('social.ts input validation rules', () => {
     const MAX_TITLE = 200
 
     it('rejects empty title', () => {
-      const title = ''
-      const isValid = title && title.length <= MAX_TITLE
-      expect(isValid).toBeFalsy()
+      const title: string = ''
+      const isValid = title.length > 0 && title.length <= MAX_TITLE
+      expect(isValid).toBe(false)
     })
 
     it('rejects title exceeding 200 chars', () => {
-      const title = 'a'.repeat(201)
+      const title: string = 'a'.repeat(201)
       expect(title.length).toBeGreaterThan(MAX_TITLE)
     })
 
     it('accepts valid title', () => {
-      const title = 'My Workout'
-      const isValid = title && title.length <= MAX_TITLE
+      const title: string = 'My Workout'
+      const isValid = title.length > 0 && title.length <= MAX_TITLE
       expect(isValid).toBe(true)
     })
   })
@@ -31,19 +31,19 @@ describe('social.ts input validation rules', () => {
     const MAX_DESC = 2000
 
     it('rejects description exceeding 2000 chars', () => {
-      const desc = 'a'.repeat(2001)
+      const desc: string = 'a'.repeat(2001)
       expect(desc.length).toBeGreaterThan(MAX_DESC)
     })
 
     it('accepts undefined description (optional)', () => {
-      const desc = undefined
+      const desc = undefined as string | undefined
       const isValid = !desc || desc.length <= MAX_DESC
       expect(isValid).toBe(true)
     })
 
     it('accepts valid description', () => {
-      const desc = 'Great workout today'
-      const isValid = !desc || desc.length <= MAX_DESC
+      const desc: string = 'Great workout today'
+      const isValid = desc.length <= MAX_DESC
       expect(isValid).toBe(true)
     })
   })
@@ -53,25 +53,25 @@ describe('social.ts input validation rules', () => {
     const MAX_COMMENT = 500
 
     it('rejects empty comment', () => {
-      const content = ''
-      const isValid = content && content.trim().length > 0 && content.length <= MAX_COMMENT
-      expect(isValid).toBeFalsy()
+      const content: string = ''
+      const isValid = content.trim().length > 0 && content.length <= MAX_COMMENT
+      expect(isValid).toBe(false)
     })
 
     it('rejects whitespace-only comment', () => {
-      const content = '   '
-      const isValid = content && content.trim().length > 0 && content.length <= MAX_COMMENT
-      expect(isValid).toBeFalsy()
+      const content: string = '   '
+      const isValid = content.trim().length > 0 && content.length <= MAX_COMMENT
+      expect(isValid).toBe(false)
     })
 
     it('rejects comment exceeding 500 chars', () => {
-      const content = 'a'.repeat(501)
+      const content: string = 'a'.repeat(501)
       expect(content.length).toBeGreaterThan(MAX_COMMENT)
     })
 
     it('accepts valid comment', () => {
-      const content = 'Nice workout!'
-      const isValid = content && content.trim().length > 0 && content.length <= MAX_COMMENT
+      const content: string = 'Nice workout!'
+      const isValid = content.trim().length > 0 && content.length <= MAX_COMMENT
       expect(isValid).toBe(true)
     })
   })

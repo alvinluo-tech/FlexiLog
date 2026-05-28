@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { AI_REQUEST_TIMEOUT_MS, AI_MAX_TOKENS, AI_TEMPERATURE, AI_MODEL_NAME } from '@/lib/constants'
 import { calculateSessionVolume } from '@/lib/volume-utils'
+import type { DayPlan, ExercisePlan } from '@/types'
 
 interface MiMoResponse {
   choices: {
