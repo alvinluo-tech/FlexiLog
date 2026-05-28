@@ -48,41 +48,51 @@ export async function getFeed(limit = 20) {
 }
 
 export async function toggleLike(sharedWorkoutId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated' }
 
-  // Check if already liked
-  const { data: existing } = await supabase
-    .from('workout_likes')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('shared_workout_id', sharedWorkoutId)
-    .single()
+    // Check if already liked
+    const { data: existing } = await supabase
+      .from('workout_likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('shared_workout_id', sharedWorkoutId)
+      .single()
 
-  if (existing) {
-    await supabase.from('workout_likes').delete().eq('id', existing.id)
-    return { liked: false }
-  } else {
-    await supabase.from('workout_likes').insert({ user_id: user.id, shared_workout_id: sharedWorkoutId })
-    return { liked: true }
+    if (existing) {
+      await supabase.from('workout_likes').delete().eq('id', existing.id)
+      return { liked: false }
+    } else {
+      await supabase.from('workout_likes').insert({ user_id: user.id, shared_workout_id: sharedWorkoutId })
+      return { liked: true }
+    }
+  } catch (e) {
+    console.error('toggleLike error:', e)
+    return { error: '操作失败' }
   }
 }
 
 export async function addComment(sharedWorkoutId: string, content: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated' }
 
-  const { data, error } = await supabase
-    .from('workout_comments')
-    .insert({ user_id: user.id, shared_workout_id: sharedWorkoutId, content })
-    .select()
-    .single()
+    const { data, error } = await supabase
+      .from('workout_comments')
+      .insert({ user_id: user.id, shared_workout_id: sharedWorkoutId, content })
+      .select()
+      .single()
 
-  if (error) return { error: error.message }
-  revalidatePath('/feed')
-  return { data }
+    if (error) return { error: error.message }
+    revalidatePath('/feed')
+    return { data }
+  } catch (e) {
+    console.error('addComment error:', e)
+    return { error: '操作失败' }
+  }
 }
 
 export async function getComments(sharedWorkoutId: string) {

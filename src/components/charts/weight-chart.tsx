@@ -20,20 +20,20 @@ export default function WeightChart({ data }: Props) {
         datasets: [{
           label: '体重',
           data: sorted.map(d => d.weight),
-          borderColor: '#0a84ff',
+          borderColor: 'var(--accent)',
           backgroundColor: 'rgba(10,132,255,0.1)',
           fill: true,
           tension: 0.4,
           pointRadius: 4,
-          pointBackgroundColor: '#0a84ff',
-          pointBorderColor: '#000',
+          pointBackgroundColor: 'var(--accent)',
+          pointBorderColor: 'var(--surface-0)',
           pointBorderWidth: 2,
         }]
       }} options={{
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1c1e', titleColor: '#fff', bodyColor: '#8e8e93', displayColors: false, callbacks: { label: (ctx: any) => ctx.parsed.y + ' kg' } } },
-        scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#636366', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#636366', font: { size: 11 }, callback: (v: any) => v + 'kg' } } }
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'var(--surface-2)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-tertiary)', displayColors: false, callbacks: { label: (ctx: any) => ctx.parsed.y + ' kg' } } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-disabled)', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-disabled)', font: { size: 11 }, callback: (v: any) => v + 'kg' } } }
       }} />
     </div>
   )
