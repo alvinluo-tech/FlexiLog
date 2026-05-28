@@ -12,23 +12,17 @@ import { toast } from 'sonner'
 import AIChat from '@/components/ai-chat'
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
-
-interface Plan {
-  id: string
-  plan_type: string
-  plan_data: any
-  created_at: string
-}
+import { AIPlan, PlanData, DayPlan, ExercisePlan, UserProfile } from '@/types'
 
 interface AICoachClientProps {
-  profile: any
-  savedPlans: Plan[]
+  profile: UserProfile | null
+  savedPlans: AIPlan[]
 }
 
 export default function AICoachClient({ profile, savedPlans }: AICoachClientProps) {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
-  const [currentPlan, setCurrentPlan] = useState<any>(null)
+  const [currentPlan, setCurrentPlan] = useState<PlanData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('0')
   const [saving, setSaving] = useState(false)
@@ -103,7 +97,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
     }
   }
 
-  const handlePlanFromChat = (plan: any) => {
+  const handlePlanFromChat = (plan: PlanData) => {
     setCurrentPlan(plan)
     setView('generate')
   }
@@ -284,10 +278,10 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                 <>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="w-full flex overflow-x-auto bg-[var(--surface-1)] border border-white/5 p-1 rounded-xl">
-                      {displayPlan.days.map((day: any, index: number) => (
-                        <TabsTrigger 
-                          key={index} 
-                          value={index.toString()} 
+                      {displayPlan.days.map((day: DayPlan, index: number) => (
+                                <TabsTrigger 
+                                  key={index} 
+                                  value={index.toString()} 
                           className="flex-shrink-0 text-[11px] font-bold rounded-lg px-3 py-1.5"
                         >
                           {day.day?.split(' - ')[0] || `第 ${index + 1} 天`}
@@ -295,7 +289,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                       ))}
                     </TabsList>
 
-                    {displayPlan.days.map((day: any, index: number) => (
+                    {displayPlan.days.map((day: DayPlan, index: number) => (
                       <TabsContent key={index} value={index.toString()} className="mt-3.5 focus-visible:outline-none">
                         <Card className="bg-[var(--surface-1)] border border-white/5 rounded-2xl shadow-sm">
                           <CardContent className="p-4 space-y-3.5">
@@ -306,7 +300,7 @@ export default function AICoachClient({ profile, savedPlans }: AICoachClientProp
                               )}
                             </div>
                             <div className="space-y-2">
-                              {day.exercises?.map((ex: any, i: number) => (
+                              {day.exercises?.map((ex: ExercisePlan, i: number) => (
                                 <div key={i} className="flex items-center justify-between p-3 bg-[var(--surface-2)] border border-white/5 rounded-xl">
                                   <div className="flex items-center gap-3">
                                     <div className="h-9 w-9 rounded-xl bg-[var(--surface-3)] border border-white/5 flex items-center justify-center shrink-0">

@@ -8,12 +8,22 @@ import { Input } from '@/components/ui/input'
 import { Heart, ChatCircle, Share, Barbell, User } from '@phosphor-icons/react'
 import { toggleLike, addComment } from '@/app/actions/social'
 
+interface WorkoutSetData {
+  weight_kg: number
+  reps: number
+  exercises?: { name: string }
+}
+
+interface WorkoutData {
+  workout_sets: WorkoutSetData[]
+}
+
 interface Post {
   id: string
   user_id: string
   title: string
   description: string | null
-  workout_data: any
+  workout_data: WorkoutData | null
   likes_count: number
   comments_count: number
   created_at: string
@@ -84,11 +94,11 @@ export default function FeedClient({ posts, currentUserId }: Props) {
     return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
   }
 
-  const getWorkoutSummary = (data: any) => {
+  const getWorkoutSummary = (data: WorkoutData | null | undefined) => {
     if (!data?.workout_sets) return { exercises: 0, sets: 0, volume: 0 }
     const sets = data.workout_sets
-    const exercises = [...new Set(sets.map((s: any) => s.exercises?.name).filter(Boolean))]
-    const volume = sets.reduce((sum: number, s: any) => sum + (Number(s.weight_kg) || 0) * (s.reps || 0), 0)
+    const exercises = [...new Set(sets.map((s) => s.exercises?.name).filter(Boolean))]
+    const volume = sets.reduce((sum, s) => sum + (Number(s.weight_kg) || 0) * (s.reps || 0), 0)
     return { exercises: exercises.length, sets: sets.length, volume }
   }
 

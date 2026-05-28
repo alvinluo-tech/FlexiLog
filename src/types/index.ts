@@ -15,7 +15,7 @@ export interface WorkoutTemplate {
   id: string
   name: string
   description: string
-  exercises: string[]
+  exercises: DayPlan[] | string[]
   created_at: string
 }
 
@@ -62,9 +62,32 @@ export interface BodyWeightLog {
   logged_at: string
 }
 
+export interface PlanData {
+  name?: string
+  description?: string
+  duration?: string
+  days: DayPlan[]
+}
+
+export interface DayPlan {
+  day: string
+  focus?: string
+  exercises: ExercisePlan[]
+}
+
+export interface ExercisePlan {
+  name: string
+  sets: number
+  reps: string
+  weight_kg?: number
+  weight?: number | string
+  weight_ref?: string
+  rest?: string
+}
+
 export interface AIPlan {
   id: string
   plan_type: 'weekly' | 'single'
-  plan_data: any
+  plan_data: PlanData
   created_at: string
 }

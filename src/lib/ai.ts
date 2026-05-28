@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { AI_REQUEST_TIMEOUT_MS, AI_MAX_TOKENS, AI_TEMPERATURE } from '@/lib/constants'
 
 interface MiMoResponse {
   choices: {
@@ -87,7 +88,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + apiKey,
     },
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify({
       model: 'mimo-v2.5-pro',
       messages: [
@@ -100,8 +101,8 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
           content: prompt
         }
       ],
-      max_tokens: 4000,
-      temperature: 0.7,
+      max_tokens: AI_MAX_TOKENS,
+      temperature: AI_TEMPERATURE,
     }),
   })
 
@@ -222,7 +223,7 @@ export async function analyzeWorkoutHistory(userId: string): Promise<string> {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + apiKey,
     },
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify({
       model: 'mimo-v2.5-pro',
       messages: [
@@ -236,7 +237,7 @@ export async function analyzeWorkoutHistory(userId: string): Promise<string> {
         }
       ],
       max_tokens: 1000,
-      temperature: 0.7,
+      temperature: AI_TEMPERATURE,
     }),
   })
 

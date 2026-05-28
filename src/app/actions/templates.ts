@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { PlanData, DayPlan, ExercisePlan } from '@/types'
 
-export async function savePlanAsTemplate(plan: any) {
+export async function savePlanAsTemplate(plan: PlanData) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -13,7 +14,7 @@ export async function savePlanAsTemplate(plan: any) {
     }
 
     // Normalize weight fields: convert weight_ref/weight to weight_kg (number)
-    const normalizeWeight = (ex: any) => {
+    const normalizeWeight = (ex: ExercisePlan) => {
       if (ex.weight_kg != null && typeof ex.weight_kg === 'number' && ex.weight_kg > 0) return ex.weight_kg
       if (ex.weight_kg != null && typeof ex.weight_kg === 'string') {
         const n = parseFloat(ex.weight_kg)
@@ -30,9 +31,9 @@ export async function savePlanAsTemplate(plan: any) {
     }
 
     // Normalize all exercises in all days
-    const normalizedDays = (plan.days || []).map((day: any) => ({
+    const normalizedDays = (plan.days || []).map((day: DayPlan) => ({
       ...day,
-      exercises: (day.exercises || []).map((ex: any) => {
+      exercises: (day.exercises || []).map((ex: ExercisePlan) => {
         const weight_kg = normalizeWeight(ex)
         const { weight_ref, weight, ...rest } = ex
         return weight_kg != null ? { ...rest, weight_kg } : rest

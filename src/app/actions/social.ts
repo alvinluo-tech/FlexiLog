@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { FEED_PAGE_LIMIT } from '@/lib/constants'
 
 export async function shareWorkout(sessionId: string, title: string, description?: string) {
   const supabase = await createClient()
@@ -34,7 +35,7 @@ export async function shareWorkout(sessionId: string, title: string, description
   return { data }
 }
 
-export async function getFeed(limit = 20) {
+export async function getFeed(limit = FEED_PAGE_LIMIT) {
   const supabase = await createClient()
 
   const { data } = await supabase

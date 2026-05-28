@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { HISTORY_PAGE_LIMIT } from '@/lib/constants'
 
 export interface HistoryPage {
   sessions: any[]
@@ -9,7 +10,7 @@ export interface HistoryPage {
 
 export async function getHistoryPage(
   offset: number = 0,
-  limit: number = 20,
+  limit: number = HISTORY_PAGE_LIMIT,
   dateFilter?: string,
   muscleGroup?: string,
 ): Promise<HistoryPage> {
