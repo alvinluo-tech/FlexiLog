@@ -20,6 +20,7 @@
 | 2026-05-27 19:30 | hermes | Redesigned exercises page: sidebar filter + equipment-grouped 2-col grid | `exercises-client.tsx` | Left sidebar for muscle groups, right side for exercises grouped by equipment (杠铃/哑铃/绳索/器械/自重), sub-category chips |
 | 2026-05-27 20:30 | hermes | Competitive optimization sprint: market research + 22 files changed | Multiple | P0: middleware protection, AI timeout, error boundaries, type fixes, Chinese dates, username display. P1: PR tracking system (Brzycki 1RM), rest timer customization, workout notes, input validation. P2: history filters/pagination, data export, onboarding, login redirect, nav warning |
 | 2026-05-28 01:05 | antigravity | Overhauled all 210 exercises to add authoritative steps, tips, and equipment directly to database; integrated frontend with new database fields. | `supabase/migrations/20240109000000_update_authoritative_exercises.sql`, `src/app/exercises/exercises-client.tsx` | Redesigned description and tips with professional Chinese guidelines and added a physical equipment column to replace regex matching. |
+| 2026-05-28 10:00 | claude | Performance optimizations (dynamic import, React.memo, useCallback, upsert) and DX improvements (.prettierrc, typecheck script, noUncheckedIndexedAccess) | `ai-coach-client.tsx`, `navigation.tsx`, `ai-chat.tsx`, `auth.ts`, `package.json`, `tsconfig.json`, `.prettierrc` | Phase 3 perf: lazy-load AIChat, memo nav, useCallback handlers, single-query upsert. Phase 4 DX: prettier config, typecheck script, stricter TS. |
 
 ## Rules
 

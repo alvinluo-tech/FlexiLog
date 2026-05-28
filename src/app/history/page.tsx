@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { calculateSessionVolume } from '@/lib/volume-utils'
 import HistoryClient from './history-client'
 
 export default async function HistoryPage() {
@@ -27,7 +28,7 @@ export default async function HistoryPage() {
   const history = (sessions || []).map(session => {
     const sets = session.workout_sets || []
     const exercises: string[] = [...new Set(sets.map((s: any) => s.exercises?.name).filter(Boolean))] as string[]
-    const volume = sets.reduce((sum: number, s: any) => sum + (Number(s.weight_kg) || 0) * (s.reps || 0), 0)
+    const volume = calculateSessionVolume(sets)
     const duration = session.ended_at 
       ? Math.round((new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 60000) 
       : 0

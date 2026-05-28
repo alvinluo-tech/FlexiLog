@@ -69,12 +69,6 @@ export interface PlanData {
   days: DayPlan[]
 }
 
-export interface DayPlan {
-  day: string
-  focus?: string
-  exercises: ExercisePlan[]
-}
-
 export interface ExercisePlan {
   name: string
   sets: number
@@ -83,6 +77,16 @@ export interface ExercisePlan {
   weight?: number | string
   weight_ref?: string
   rest?: string
+}
+
+export interface DayPlan {
+  day: string
+  focus?: string
+  exercises: ExercisePlan[]
+}
+
+export interface WorkoutSetWithExercise extends WorkoutSet {
+  exercises?: { name: string; muscle_group: string }
 }
 
 export interface AIPlan {

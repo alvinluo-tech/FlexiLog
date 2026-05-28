@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { AI_REQUEST_TIMEOUT_MS, AI_MAX_TOKENS, AI_TEMPERATURE } from '@/lib/constants'
+import { AI_REQUEST_TIMEOUT_MS, AI_MAX_TOKENS, AI_TEMPERATURE, AI_MODEL_NAME } from '@/lib/constants'
+import { calculateSessionVolume } from '@/lib/volume-utils'
 
 interface MiMoResponse {
   choices: {
@@ -90,7 +91,7 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
     },
     signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify({
-      model: 'mimo-v2.5-pro',
+      model: AI_MODEL_NAME,
       messages: [
         {
           role: 'system',
@@ -150,10 +151,10 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
       name: parsed.name || parsed.plan_name || '训练计划',
       description: parsed.description || parsed.plan_desc || '个性化训练计划',
       duration: parsed.duration || parsed.plan_duration || '4周',
-      days: (parsed.days || parsed.training_days || []).map((day: any) => ({
+      days: (parsed.days || parsed.training_days || []).map((day: DayPlan) => ({
         day: day.day || '',
         focus: day.focus || '',
-        exercises: (day.exercises || []).map((ex: any) => ({
+        exercises: (day.exercises || []).map((ex: ExercisePlan) => ({
           name: ex.name || '',
           sets: ex.sets || 3,
           reps: String(ex.reps || '10'),
@@ -203,10 +204,11 @@ export async function analyzeWorkoutHistory(userId: string): Promise<string> {
     return '暂无训练数据，请先记录一些训练。'
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const workoutSummary = sessions.map((s: any) => {
     const sets = s.workout_sets || []
-    const exerciseNames = [...new Set(sets.map((set: any) => (set.exercises as any)?.name).filter(Boolean))]
-    const totalVolume = sets.reduce((sum: number, set: any) => sum + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
+    const exerciseNames = [...new Set(sets.map((set: Record<string, any>) => set.exercises?.name).filter(Boolean))]
+    const totalVolume = calculateSessionVolume(sets)
     return {
       date: s.started_at?.split('T')[0],
       exercises: exerciseNames,
@@ -225,7 +227,7 @@ export async function analyzeWorkoutHistory(userId: string): Promise<string> {
     },
     signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify({
-      model: 'mimo-v2.5-pro',
+      model: AI_MODEL_NAME,
       messages: [
         {
           role: 'system',

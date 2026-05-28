@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { AI_REQUEST_TIMEOUT_MS, AI_CHAT_MAX_TOKENS, AI_TEMPERATURE, CONVERSATIONS_LIMIT } from '@/lib/constants'
+import { rateLimit } from '@/lib/rate-limit'
+import { AI_MODEL_NAME, AI_CHAT_MAX_TOKENS, AI_TEMPERATURE, CONVERSATIONS_LIMIT } from '@/lib/constants'
+import type { DayPlan, ExercisePlan } from '@/types'
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,8 +15,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    // Rate limiting
+    if (!rateLimit(user.id, 20, 60000)) {
+      return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 })
+    }
+
     const body = await request.json()
     const { message, conversationId, currentPlan } = body
+
+    // Input validation
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return NextResponse.json({ error: '消息不能为空' }, { status: 400 })
+    }
+    if (message.length > 2000) {
+      return NextResponse.json({ error: '消息不能超过 2000 字符' }, { status: 400 })
+    }
+    if (conversationId && !UUID_REGEX.test(conversationId)) {
+      return NextResponse.json({ error: '无效的会话 ID' }, { status: 400 })
+    }
+    if (currentPlan && JSON.stringify(currentPlan).length > 10000) {
+      return NextResponse.json({ error: '计划数据过大' }, { status: 400 })
+    }
 
     // Get user profile for context
     const { data: profile } = await supabase
@@ -101,7 +124,7 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
       },
       signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
       body: JSON.stringify({
-        model: 'mimo-v2.5-pro',
+        model: AI_MODEL_NAME,
         messages,
         max_tokens: AI_CHAT_MAX_TOKENS,
         temperature: AI_TEMPERATURE,
@@ -135,16 +158,16 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
         const rawPlan = JSON.parse(jsonMatch[0])
         // Normalize: ensure exercises have weight_kg field
         if (rawPlan.days) {
-          rawPlan.days = rawPlan.days.map((day: any) => ({
+          rawPlan.days = rawPlan.days.map((day: DayPlan) => ({
             ...day,
-            exercises: (day.exercises || []).map((ex: any) => ({
+            exercises: (day.exercises || []).map((ex: ExercisePlan) => ({
               ...ex,
               weight_kg: ex.weight_kg ?? ex.weight ?? undefined,
             })),
           }))
         }
         extractedPlan = rawPlan
-      } catch {}
+      } catch (e) { console.error('Failed to parse AI response JSON:', e) }
     }
 
     // Save user message
@@ -168,6 +191,6 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
     })
   } catch (error: any) {
     console.error('Chat API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'AI 服务暂时不可用' }, { status: 500 })
   }
 }
