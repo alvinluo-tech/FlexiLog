@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 inspect-exercises.js
+
+# Claude Code
+.claude/
