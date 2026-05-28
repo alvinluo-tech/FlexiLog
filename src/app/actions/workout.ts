@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { SESSIONS_PAGE_LIMIT, MAX_REPS, MIN_AGE, MAX_AGE, MIN_HEIGHT_CM, MAX_HEIGHT_CM, MIN_WEIGHT_KG, MAX_WEIGHT_KG, MIN_BODY_FAT, MAX_BODY_FAT, WEIGHT_LOG_LIMIT } from '@/lib/constants'
+import { PlanData } from '@/types'
 
 // Workout Sessions
 export async function createWorkoutSession(templateId?: string) {
@@ -95,7 +97,7 @@ export async function discardWorkoutSession(sessionId: string) {
   return { success: true }
 }
 
-export async function getWorkoutSessions(limit = 10) {
+export async function getWorkoutSessions(limit = SESSIONS_PAGE_LIMIT) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -135,8 +137,8 @@ export async function addWorkoutSet(sessionId: string, exerciseId: string, setDa
     if (setData.reps < 1) {
       return { error: '次数至少为 1' }
     }
-    if (setData.reps > 999) {
-      return { error: '次数不能超过 999' }
+    if (setData.reps > MAX_REPS) {
+      return { error: '次数不能超过 ' + MAX_REPS }
     }
     if (setData.rpe !== undefined && (setData.rpe < 1 || setData.rpe > 10)) {
       return { error: 'RPE 必须在 1-10 之间' }
@@ -263,17 +265,17 @@ export async function updateUserProfile(updates: {
   equipment?: string
 }) {
   // Input validation
-  if (updates.age !== undefined && (updates.age < 10 || updates.age > 120)) {
-    return { error: '年龄必须在 10-120 之间' }
+  if (updates.age !== undefined && (updates.age < MIN_AGE || updates.age > MAX_AGE)) {
+    return { error: '年龄必须在 ' + MIN_AGE + '-' + MAX_AGE + ' 之间' }
   }
-  if (updates.height_cm !== undefined && (updates.height_cm < 50 || updates.height_cm > 250)) {
-    return { error: '身高必须在 50-250 cm 之间' }
+  if (updates.height_cm !== undefined && (updates.height_cm < MIN_HEIGHT_CM || updates.height_cm > MAX_HEIGHT_CM)) {
+    return { error: '身高必须在 ' + MIN_HEIGHT_CM + '-' + MAX_HEIGHT_CM + ' cm 之间' }
   }
-  if (updates.weight_kg !== undefined && (updates.weight_kg < 20 || updates.weight_kg > 500)) {
-    return { error: '体重必须在 20-500 kg 之间' }
+  if (updates.weight_kg !== undefined && (updates.weight_kg < MIN_WEIGHT_KG || updates.weight_kg > MAX_WEIGHT_KG)) {
+    return { error: '体重必须在 ' + MIN_WEIGHT_KG + '-' + MAX_WEIGHT_KG + ' kg 之间' }
   }
-  if (updates.body_fat_percentage !== undefined && (updates.body_fat_percentage < 1 || updates.body_fat_percentage > 60)) {
-    return { error: '体脂率必须在 1%-60% 之间' }
+  if (updates.body_fat_percentage !== undefined && (updates.body_fat_percentage < MIN_BODY_FAT || updates.body_fat_percentage > MAX_BODY_FAT)) {
+    return { error: '体脂率必须在 ' + MIN_BODY_FAT + '%-' + MAX_BODY_FAT + '% 之间' }
   }
 
   const supabase = await createClient()
@@ -321,7 +323,7 @@ export async function logBodyWeight(weight: number) {
   return { success: true }
 }
 
-export async function getBodyWeightHistory(limit = 30) {
+export async function getBodyWeightHistory(limit = WEIGHT_LOG_LIMIT) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -340,7 +342,7 @@ export async function getBodyWeightHistory(limit = 30) {
 }
 
 // AI Plans
-export async function saveAiPlan(planType: string, planData: any) {
+export async function saveAiPlan(planType: string, planData: PlanData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   

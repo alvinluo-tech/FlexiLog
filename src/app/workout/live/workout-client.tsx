@@ -16,7 +16,9 @@ import { checkAndUpdatePRs } from '@/app/actions/records'
 import { getRecordLabel, getRecordUnit } from '@/lib/record-utils'
 import { cn } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
+import { DEFAULT_REST_SECONDS, MIN_REST_SECONDS, MAX_REST_SECONDS } from '@/lib/constants'
 import { motion, AnimatePresence } from 'motion/react'
+import { WorkoutTemplate, PlanData, DayPlan, ExercisePlan } from '@/types'
 
 interface Exercise {
   id: string
@@ -44,10 +46,10 @@ interface WorkoutLiveClientProps {
   exercises: Exercise[]
   previousData: Record<string, { weight: string; reps: string }[]>
   userId: string
-  templates?: any[]
+  templates?: WorkoutTemplate[]
   initialSessionId?: string | null
   initialSessionStartTime?: number | null
-  initialExerciseBlocks?: any[]
+  initialExerciseBlocks?: ExerciseBlock[]
 }
 
 export default function WorkoutLiveClient({ 
@@ -63,7 +65,7 @@ export default function WorkoutLiveClient({
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId)
   const [exerciseBlocks, setExerciseBlocks] = useState<ExerciseBlock[]>(() => {
     // Migrate initial blocks to include restSeconds
-    return initialExerciseBlocks.map((b: any) => ({ ...b, restSeconds: b.restSeconds ?? 90 }))
+    return initialExerciseBlocks.map((b) => ({ ...b, restSeconds: b.restSeconds ?? DEFAULT_REST_SECONDS }))
   })
   const [showExercisePicker, setShowExercisePicker] = useState(false)
   const [exerciseSearch, setExerciseSearch] = useState('')
@@ -73,10 +75,10 @@ export default function WorkoutLiveClient({
   )
   const [saving, setSaving] = useState(false)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
-  const [aiPlan, setAiPlan] = useState<any | null>(null)
+  const [aiPlan, setAiPlan] = useState<PlanData | null>(null)
   const [showDayPicker, setShowDayPicker] = useState(false)
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null)
-  const [pickerPlan, setPickerPlan] = useState<any | null>(null) // Plan data for day picker (from AI or template)
+  const [pickerPlan, setPickerPlan] = useState<PlanData | null>(null) // Plan data for day picker (from AI or template)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [editingTemplateName, setEditingTemplateName] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -122,7 +124,7 @@ export default function WorkoutLiveClient({
       try {
         const blocks = JSON.parse(savedBlocks)
         if (blocks.length > 0) {
-          setExerciseBlocks(blocks.map((b: any) => ({ ...b, restSeconds: b.restSeconds ?? 90 })))
+          setExerciseBlocks(blocks.map((b: any) => ({ ...b, restSeconds: b.restSeconds ?? DEFAULT_REST_SECONDS })))
         }
       } catch {}
     } else if (savedBlocks && exerciseBlocks.length > 0) {
@@ -273,19 +275,19 @@ export default function WorkoutLiveClient({
   }
 
   // Template click: single-day → load directly, multi-day → show day picker
-  const handleStartTemplateWorkout = async (template: any) => {
-    const plan = template.exercises
+  const handleStartTemplateWorkout = async (template: WorkoutTemplate) => {
+    const plan = template.exercises as DayPlan[]
     if (!plan?.length) return
 
     // Detect if multi-day: array of objects with 'day' or 'focus' and nested 'exercises'
-    const isMultiDay = plan.length > 1 && plan.some((d: any) => d.exercises && Array.isArray(d.exercises))
+    const isMultiDay = plan.length > 1 && plan.some((d) => d.exercises && Array.isArray(d.exercises))
 
     if (isMultiDay) {
       // Open day picker for multi-day plans
       setPickerPlan({ name: template.name, days: plan })
       const today = new Date().getDay()
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-      const todayIdx = plan.findIndex((d: any) => d.day?.toLowerCase().includes(dayNames[today]))
+      const todayIdx = plan.findIndex((d) => d.day?.toLowerCase().includes(dayNames[today]))
       setSelectedDayIndex(todayIdx >= 0 ? todayIdx : 0)
       setShowDayPicker(true)
     } else {
@@ -388,7 +390,7 @@ export default function WorkoutLiveClient({
 
   // ── Exercise & Set Management ──
   // Helper: parse weight from various AI formats (number, "55-75kg", "20-30kg/只", etc.)
-  const parseWeightFromPlan = useCallback((ex: any): string => {
+  const parseWeightFromPlan = useCallback((ex: ExercisePlan): string => {
     // Direct number field
     if (ex.weight_kg && typeof ex.weight_kg === 'number' && ex.weight_kg > 0) return String(ex.weight_kg)
     if (ex.weight && typeof ex.weight === 'number' && ex.weight > 0) return String(ex.weight)
@@ -407,9 +409,9 @@ export default function WorkoutLiveClient({
   }, [])
 
   // Load exercises from a specific day plan into exercise blocks
-  const loadExercisesFromDayPlan = useCallback((dayPlan: any) => {
+  const loadExercisesFromDayPlan = useCallback((dayPlan: DayPlan) => {
     if (!dayPlan?.exercises) return false
-    const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: any) => {
+    const newBlocks: ExerciseBlock[] = dayPlan.exercises.map((ex: ExercisePlan) => {
       const matched = exercises.find(e => e.name.toLowerCase() === ex.name.toLowerCase())
       return {
         exercise: matched
@@ -434,7 +436,7 @@ export default function WorkoutLiveClient({
             const n = parseInt(String(ex.rest).replace(/[^0-9]/g, ''))
             if (!isNaN(n) && n > 0) return n
           }
-          return matched?.rest_seconds ?? 90
+          return matched?.rest_seconds ?? DEFAULT_REST_SECONDS
         })()
       }
     })
@@ -486,7 +488,7 @@ export default function WorkoutLiveClient({
       exercise,
       sets: [{ id: `set-${Date.now()}`, weight: '', reps: '', completed: false, saved: false }],
       previousData: prev || [],
-      restSeconds: exercise.rest_seconds ?? 90,
+      restSeconds: exercise.rest_seconds ?? DEFAULT_REST_SECONDS,
     }
     setExerciseBlocks(prev => [...prev, newBlock])
     setShowExercisePicker(false)
@@ -637,7 +639,7 @@ export default function WorkoutLiveClient({
   const updateRestSeconds = useCallback((blockIndex: number, seconds: number) => {
     setExerciseBlocks(prev => {
       const updated = [...prev]
-      updated[blockIndex] = { ...updated[blockIndex], restSeconds: Math.max(15, Math.min(600, seconds)) }
+      updated[blockIndex] = { ...updated[blockIndex], restSeconds: Math.max(MIN_REST_SECONDS, Math.min(MAX_REST_SECONDS, seconds)) }
       return updated
     })
   }, [])

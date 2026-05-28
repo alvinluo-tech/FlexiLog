@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { AI_REQUEST_TIMEOUT_MS, AI_CHAT_MAX_TOKENS, AI_TEMPERATURE, CONVERSATIONS_LIMIT } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       .select('role, content')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
-      .limit(20)
+      .limit(CONVERSATIONS_LIMIT)
 
     // Build context for AI
     const systemPrompt = `你是一个专业的健身教练AI助手。你的任务是帮助用户制定和调整训练计划。
@@ -98,12 +99,12 @@ ${currentPlan ? '当前计划：\n' + JSON.stringify(currentPlan, null, 2) : ''}
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + apiKey,
       },
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS),
       body: JSON.stringify({
         model: 'mimo-v2.5-pro',
         messages,
-        max_tokens: 4000,
-        temperature: 0.7,
+        max_tokens: AI_CHAT_MAX_TOKENS,
+        temperature: AI_TEMPERATURE,
       }),
     })
 

@@ -24,6 +24,7 @@ import {
 } from "@/app/actions/ai-chat";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { TEXTAREA_MAX_HEIGHT } from "@/lib/constants";
 
 interface Message {
   id: string;
@@ -104,7 +105,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 160)}px`;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, TEXTAREA_MAX_HEIGHT)}px`;
     }
   }, [input]);
 
