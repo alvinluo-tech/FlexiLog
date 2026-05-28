@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Barbell, Clock, TrendUp, CaretDown, CaretUp, ChartLineUp, DownloadSimple, Funnel } from '@phosphor-icons/react'
-import WeightChart from '@/components/charts/weight-chart'
-import VolumeChart from '@/components/charts/volume-chart'
+import dynamic from 'next/dynamic'
+
+const WeightChart = dynamic(() => import('@/components/charts/weight-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
+const VolumeChart = dynamic(() => import('@/components/charts/volume-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
 import { getHistoryPage } from '@/app/actions/history'
 import { exportWorkoutData } from '@/app/actions/export'
 import { toast } from 'sonner'
@@ -67,7 +69,7 @@ export default function HistoryClient({ history: initialHistory, weightChartData
     if (diffDays === 0) return '今天'
     if (diffDays === 1) return '昨天'
     if (diffDays < 7) return diffDays + ' 天前'
-    return date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+    return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })
   }
 
   const getGroupColor = (group: string) => {

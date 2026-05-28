@@ -698,8 +698,9 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
             {/* Name */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[var(--text-secondary)]">动作名称 *</label>
+              <label htmlFor="custom-exercise-name" className="text-[11px] font-bold text-[var(--text-secondary)]">动作名称 *</label>
               <Input
+                id="custom-exercise-name"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="例如：杠铃弯举"
@@ -710,7 +711,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
             {/* Muscle Group */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[var(--text-secondary)]">目标肌群</label>
+              <label htmlFor="custom-exercise-group" className="text-[11px] font-bold text-[var(--text-secondary)]">目标肌群</label>
               <div className="flex flex-wrap gap-1.5">
                 {muscleGroups.map(g => (
                   <button
@@ -731,8 +732,9 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
             {/* Description */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[var(--text-secondary)]">动作描述</label>
+              <label htmlFor="custom-exercise-desc" className="text-[11px] font-bold text-[var(--text-secondary)]">动作描述</label>
               <textarea
+                id="custom-exercise-desc"
                 value={customDesc}
                 onChange={(e) => setCustomDesc(e.target.value)}
                 placeholder="简要描述动作要领..."
@@ -743,8 +745,9 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
 
             {/* Tips */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-[var(--text-secondary)]">训练提示</label>
+              <label htmlFor="custom-exercise-tips" className="text-[11px] font-bold text-[var(--text-secondary)]">训练提示</label>
               <Input
+                id="custom-exercise-tips"
                 value={customTips}
                 onChange={(e) => setCustomTips(e.target.value)}
                 placeholder="例如：保持核心收紧"

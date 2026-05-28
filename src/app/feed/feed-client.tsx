@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,32 +28,50 @@ export default function FeedClient({ posts, currentUserId }: Props) {
   const [localPosts, setLocalPosts] = useState(posts)
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [showComments, setShowComments] = useState<Record<string, boolean>>({})
+  const [likingId, setLikingId] = useState<string | null>(null)
+  const [commentingId, setCommentingId] = useState<string | null>(null)
 
   const handleLike = async (postId: string) => {
-    const result = await toggleLike(postId)
-    if (!result.error) {
-      setLocalPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return { ...p, likes_count: result.liked ? p.likes_count + 1 : p.likes_count - 1 }
-        }
-        return p
-      }))
+    if (likingId) return
+    setLikingId(postId)
+    try {
+      const result = await toggleLike(postId)
+      if (!result.error) {
+        setLocalPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return { ...p, likes_count: result.liked ? p.likes_count + 1 : p.likes_count - 1 }
+          }
+          return p
+        }))
+      } else {
+        toast.error('操作失败', { description: result.error })
+      }
+    } finally {
+      setLikingId(null)
     }
   }
 
   const handleComment = async (postId: string) => {
     const content = commentInputs[postId]
     if (!content?.trim()) return
+    if (commentingId) return
 
-    const result = await addComment(postId, content)
-    if (!result.error) {
-      setCommentInputs(prev => ({ ...prev, [postId]: '' }))
-      setLocalPosts(prev => prev.map(p => {
-        if (p.id === postId) {
-          return { ...p, comments_count: p.comments_count + 1 }
-        }
-        return p
-      }))
+    setCommentingId(postId)
+    try {
+      const result = await addComment(postId, content)
+      if (!result.error) {
+        setCommentInputs(prev => ({ ...prev, [postId]: '' }))
+        setLocalPosts(prev => prev.map(p => {
+          if (p.id === postId) {
+            return { ...p, comments_count: p.comments_count + 1 }
+          }
+          return p
+        }))
+      } else {
+        toast.error('评论失败', { description: result.error })
+      }
+    } finally {
+      setCommentingId(null)
     }
   }
 
@@ -62,7 +81,7 @@ export default function FeedClient({ posts, currentUserId }: Props) {
     const diffHours = Math.floor((now.getTime() - date.getTime()) / 3600000)
     if (diffHours < 1) return '刚刚'
     if (diffHours < 24) return diffHours + '小时前'
-    return date.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
   }
 
   const getWorkoutSummary = (data: any) => {
@@ -125,19 +144,22 @@ export default function FeedClient({ posts, currentUserId }: Props) {
                 <div className="flex items-center gap-4 pt-2 border-t border-[var(--border-default)]">
                   <button 
                     onClick={() => handleLike(post.id)}
-                    className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--danger)] transition-colors"
+                    disabled={likingId === post.id}
+                    aria-label="点赞"
+                    className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--danger)] active:scale-95 transition-all disabled:opacity-50"
                   >
-                    <Heart className="h-5 w-5" />
+                    <Heart className={`h-5 w-5 ${likingId === post.id ? 'animate-pulse' : ''}`} />
                     <span className="data-number">{post.likes_count}</span>
                   </button>
                   <button 
                     onClick={() => setShowComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                    className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"
+                    aria-label="评论"
+                    className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--accent)] active:scale-95 transition-all"
                   >
                     <ChatCircle className="h-5 w-5" />
                     <span className="data-number">{post.comments_count}</span>
                   </button>
-                  <button className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] ml-auto">
+                  <button aria-label="分享" className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] ml-auto hover:text-[var(--accent)] active:scale-95 transition-all">
                     <Share className="h-5 w-5" />
                   </button>
                 </div>
@@ -151,7 +173,7 @@ export default function FeedClient({ posts, currentUserId }: Props) {
                       onChange={(e) => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
                       className="flex-1 bg-[var(--surface-2)] border-[var(--border-default)]"
                     />
-                    <Button size="sm" onClick={() => handleComment(post.id)}>发布</Button>
+                    <Button size="sm" onClick={() => handleComment(post.id)} disabled={commentingId === post.id}>{commentingId === post.id ? '发布中...' : '发布'}</Button>
                   </div>
                 )}
               </CardContent>

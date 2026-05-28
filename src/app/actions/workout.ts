@@ -6,49 +6,59 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // Workout Sessions
 export async function createWorkoutSession(templateId?: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    return { error: '未登录' }
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return { error: '未登录' }
+    }
+
+    const { data, error } = await supabase
+      .from('workout_sessions')
+      .insert({
+        user_id: user.id,
+        template_id: templateId || null,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/workout')
+    return { data }
+  } catch (e) {
+    console.error('createWorkoutSession error:', e)
+    return { error: '操作失败' }
   }
-
-  const { data, error } = await supabase
-    .from('workout_sessions')
-    .insert({
-      user_id: user.id,
-      template_id: templateId || null,
-      started_at: new Date().toISOString(),
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  revalidatePath('/workout')
-  return { data }
 }
 
 export async function endWorkoutSession(sessionId: string, notes?: string) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const updateData: Record<string, any> = { ended_at: new Date().toISOString() }
-  if (notes !== undefined) updateData.notes = notes
+    const updateData: Record<string, any> = { ended_at: new Date().toISOString() }
+    if (notes !== undefined) updateData.notes = notes
 
-  const { error } = await supabase
-    .from('workout_sessions')
-    .update(updateData)
-    .eq('id', sessionId)
+    const { error } = await supabase
+      .from('workout_sessions')
+      .update(updateData)
+      .eq('id', sessionId)
 
-  if (error) {
-    return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/workout')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (e) {
+    console.error('endWorkoutSession error:', e)
+    return { error: '操作失败' }
   }
-
-  revalidatePath('/workout')
-  revalidatePath('/dashboard')
-  return { success: true }
 }
 
 export async function discardWorkoutSession(sessionId: string) {
@@ -117,39 +127,44 @@ export async function addWorkoutSet(sessionId: string, exerciseId: string, setDa
   rpe?: number
   rest_seconds?: number
 }) {
-  // Input validation
-  if (setData.weight_kg < 0) {
-    return { error: '重量不能为负数' }
-  }
-  if (setData.reps < 1) {
-    return { error: '次数至少为 1' }
-  }
-  if (setData.reps > 999) {
-    return { error: '次数不能超过 999' }
-  }
-  if (setData.rpe !== undefined && (setData.rpe < 1 || setData.rpe > 10)) {
-    return { error: 'RPE 必须在 1-10 之间' }
-  }
+  try {
+    // Input validation
+    if (setData.weight_kg < 0) {
+      return { error: '重量不能为负数' }
+    }
+    if (setData.reps < 1) {
+      return { error: '次数至少为 1' }
+    }
+    if (setData.reps > 999) {
+      return { error: '次数不能超过 999' }
+    }
+    if (setData.rpe !== undefined && (setData.rpe < 1 || setData.rpe > 10)) {
+      return { error: 'RPE 必须在 1-10 之间' }
+    }
 
-  const supabase = await createClient()
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('workout_sets')
-    .insert({
-      session_id: sessionId,
-      exercise_id: exerciseId,
-      ...setData,
-      completed: true,
-    })
-    .select()
-    .single()
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .insert({
+        session_id: sessionId,
+        exercise_id: exerciseId,
+        ...setData,
+        completed: true,
+      })
+      .select()
+      .single()
 
-  if (error) {
-    return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/workout')
+    return { data }
+  } catch (e) {
+    console.error('addWorkoutSet error:', e)
+    return { error: '操作失败' }
   }
-
-  revalidatePath('/workout')
-  return { data }
 }
 
 export async function updateWorkoutSet(setId: string, updates: {
@@ -158,35 +173,45 @@ export async function updateWorkoutSet(setId: string, updates: {
   rpe?: number
   completed?: boolean
 }) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('workout_sets')
-    .update(updates)
-    .eq('id', setId)
+    const { error } = await supabase
+      .from('workout_sets')
+      .update(updates)
+      .eq('id', setId)
 
-  if (error) {
-    return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/workout')
+    return { success: true }
+  } catch (e) {
+    console.error('updateWorkoutSet error:', e)
+    return { error: '操作失败' }
   }
-
-  revalidatePath('/workout')
-  return { success: true }
 }
 
 export async function deleteWorkoutSet(setId: string) {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { error } = await supabase
-    .from('workout_sets')
-    .delete()
-    .eq('id', setId)
+    const { error } = await supabase
+      .from('workout_sets')
+      .delete()
+      .eq('id', setId)
 
-  if (error) {
-    return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/workout')
+    return { success: true }
+  } catch (e) {
+    console.error('deleteWorkoutSet error:', e)
+    return { error: '操作失败' }
   }
-
-  revalidatePath('/workout')
-  return { success: true }
 }
 
 // Exercises

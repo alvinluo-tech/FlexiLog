@@ -80,7 +80,6 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
 
 直接返回JSON，不要markdown代码块。`
 
-  console.log('Calling MiMo API...')
   
   const response = await fetch(baseUrl + '/chat/completions', {
     method: 'POST',
@@ -106,8 +105,6 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
     }),
   })
 
-  console.log('Response status:', response.status)
-
   if (!response.ok) {
     const errorBody = await response.text()
     console.error('MiMo API error:', response.status, errorBody)
@@ -115,20 +112,14 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
   }
 
   const data: MiMoResponse = await response.json()
-  console.log('Response data:', JSON.stringify(data).substring(0, 500))
   
   // Try to get content from multiple sources
   let content = data.choices[0]?.message?.content || ''
   const reasoningContent = data.choices[0]?.message?.reasoning_content || ''
   const finishReason = data.choices[0]?.finish_reason || ''
 
-  console.log('Content length:', content.length)
-  console.log('Reasoning length:', reasoningContent.length)
-  console.log('Finish reason:', finishReason)
-
   // If content is empty but reasoning has content, try to extract JSON from reasoning
   if (!content && reasoningContent) {
-    console.log('Using reasoning_content')
     // Try to find JSON in reasoning content
     const jsonMatch = reasoningContent.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
@@ -149,8 +140,6 @@ export async function generateWorkoutPlan(params: WorkoutPlanRequest): Promise<W
   } else if (jsonStr.includes('```')) {
     jsonStr = jsonStr.split('```')[1].split('```')[0].trim()
   }
-
-  console.log('Parsing JSON:', jsonStr.substring(0, 200))
 
   try {
     const parsed = JSON.parse(jsonStr)

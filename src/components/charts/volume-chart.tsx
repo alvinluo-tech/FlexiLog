@@ -20,16 +20,16 @@ export default function VolumeChart({ data }: Props) {
         datasets: [{
           label: '训练量',
           data: sorted.map(d => d.volume / 1000),
-          backgroundColor: 'rgba(10,132,255,0.6)',
-          borderColor: '#0a84ff',
+          backgroundColor: 'rgba(59,130,246,0.6)',
+          borderColor: 'var(--accent)',
           borderWidth: 1,
           borderRadius: 6,
         }]
       }} options={{
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1c1e', titleColor: '#fff', bodyColor: '#8e8e93', displayColors: false, callbacks: { label: (ctx: any) => ctx.parsed.y.toFixed(1) + ' T' } } },
-        scales: { x: { grid: { display: false }, ticks: { color: '#636366', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#636366', font: { size: 11 }, callback: (v: any) => v + 'T' } } }
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'var(--surface-2)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-tertiary)', displayColors: false, callbacks: { label: (ctx: any) => ctx.parsed.y.toFixed(1) + ' T' } } },
+        scales: { x: { grid: { display: false }, ticks: { color: 'var(--text-disabled)', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-disabled)', font: { size: 11 }, callback: (v: any) => v + 'T' } } }
       }} />
     </div>
   )

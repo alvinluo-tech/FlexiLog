@@ -55,10 +55,35 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const loadConversations = useCallback(async () => {
+    const result = await getConversations();
+    if (result.data) {
+      setConversations(result.data);
+      // Auto-select the most recent conversation on initial load
+      if (result.data.length > 0 && !currentConvId) {
+        setCurrentConvId(result.data[0].id);
+      }
+    }
+  }, [currentConvId]);
+
+  const loadMessages = useCallback(async (convId: string) => {
+    const result = await getMessages(convId);
+    if (result.data) {
+      setMessages(
+        result.data.map((m) => ({
+          id: m.id,
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          metadata: m.metadata,
+        }))
+      );
+    }
+  }, []);
+
   // Load conversations on mount
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [loadConversations]);
 
   // Load messages when conversation changes
   useEffect(() => {
@@ -67,7 +92,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
     } else {
       setMessages([]);
     }
-  }, [currentConvId]);
+  }, [currentConvId, loadMessages]);
 
   // Auto scroll to bottom with smooth springs
   useEffect(() => {
@@ -82,31 +107,6 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
       textareaRef.current.style.height = `${Math.min(scrollHeight, 160)}px`;
     }
   }, [input]);
-
-  const loadConversations = async () => {
-    const result = await getConversations();
-    if (result.data) {
-      setConversations(result.data);
-      // Auto-select the most recent conversation on initial load
-      if (result.data.length > 0 && !currentConvId) {
-        setCurrentConvId(result.data[0].id);
-      }
-    }
-  };
-
-  const loadMessages = async (convId: string) => {
-    const result = await getMessages(convId);
-    if (result.data) {
-      setMessages(
-        result.data.map((m) => ({
-          id: m.id,
-          role: m.role as "user" | "assistant",
-          content: m.content,
-          metadata: m.metadata,
-        }))
-      );
-    }
-  };
 
   const startNewConversation = () => {
     setCurrentConvId(null);
@@ -312,7 +312,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
                 <button
                   onClick={(e) => handleDeleteConversation(conv.id, e)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg hover:text-[var(--danger)] transition-all shrink-0 cursor-pointer"
-                  title="删除对话"
+                  title="删除对话" aria-label="删除对话"
                 >
                   <Trash className="h-3.5 w-3.5" />
                 </button>
@@ -439,6 +439,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
               onKeyDown={handleKeyDown}
               placeholder="问问 AI 健身教练..."
               disabled={loading}
+              aria-label="消息输入"
               className="w-full bg-transparent focus:outline-none border-none py-3.5 pl-5 pr-2 text-xs text-white font-medium resize-none min-h-[48px] max-h-[160px] no-scrollbar leading-relaxed"
             />
 
@@ -448,7 +449,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
                 <Button
                   onClick={handleInterrupt}
                   className="w-9 h-9 p-0 rounded-full bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white text-red-400 active:scale-90 transition-all flex items-center justify-center cursor-pointer shadow-md shadow-red-500/5"
-                  title="中断生成"
+                  title="中断生成" aria-label="中断生成"
                 >
                   <Stop weight="fill" className="h-4.5 w-4.5" />
                 </Button>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from '@/app/actions/auth'
 import Link from 'next/link'
@@ -31,7 +32,7 @@ function LoginForm() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center mx-auto mb-4 shadow-lg bg-[var(--surface-1)]">
-            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
+            <Image src="/icon-192.png" alt="FlexiLog Logo" width={64} height={64} className="h-full w-full object-cover" />
           </div>
           <h1 className="text-[32px] font-bold tracking-tight">FlexiLog</h1>
           <p className="text-[15px] text-[var(--text-tertiary)] mt-1">AI 健身追踪器</p>

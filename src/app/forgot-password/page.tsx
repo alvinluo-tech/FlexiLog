@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center mx-auto mb-4 bg-[var(--surface-1)]">
-            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
+            <Image src="/icon-192.png" alt="FlexiLog Logo" width={48} height={48} className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">FlexiLog</h1>
           <p className="text-sm text-[var(--text-tertiary)] mt-1">忘记密码</p>

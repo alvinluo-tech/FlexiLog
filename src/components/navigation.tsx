@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { House, Barbell, ListChecks, Sparkle, User, Lightning, Clock, Users } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
@@ -22,7 +23,7 @@ export function Sidebar({ userName }: { userName?: string }) {
       <div className="p-6 pb-8">
         <Link href="/dashboard" className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center bg-[var(--surface-2)]">
-            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
+            <Image src="/icon-192.png" alt="FlexiLog Logo" width={40} height={40} className="h-full w-full object-cover" />
           </div>
           <div>
             <h1 className="text-[18px] font-bold tracking-tight">FlexiLog</h1>

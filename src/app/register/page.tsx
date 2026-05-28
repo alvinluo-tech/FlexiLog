@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { signUp } from '@/app/actions/auth'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
@@ -51,7 +52,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm mx-auto">
         <div className="text-center mb-10">
           <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center mx-auto mb-4 shadow-lg bg-[var(--surface-1)]">
-            <img src="/icon-192.png" alt="FlexiLog Logo" className="h-full w-full object-cover" />
+            <Image src="/icon-192.png" alt="FlexiLog Logo" width={64} height={64} className="h-full w-full object-cover" />
           </div>
           <h1 className="text-[32px] font-bold tracking-tight">创建账号</h1>
           <p className="text-[15px] text-[var(--text-tertiary)] mt-1">开始你的健身之旅</p>

@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { type, params } = body
 
-    console.log('AI request:', { type, userId: user.id })
-
     if (type === 'generate_plan') {
       // Get user profile for better recommendations
       const { data: profile } = await supabase
@@ -29,11 +27,8 @@ export async function POST(request: NextRequest) {
         ...params,
       }
 
-      console.log('Generating plan with params:', planParams)
       
-      const plan = await generateWorkoutPlan(planParams)
-
-      console.log('Plan generated:', plan)
+      const plan = await generateWorkoutPlan(planParams);
 
       // Save the plan
       const { error: saveError } = await supabase.from('ai_plans').insert({
