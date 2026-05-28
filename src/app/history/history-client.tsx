@@ -67,7 +67,7 @@ export default function HistoryClient({ history: initialHistory, weightChartData
     if (diffDays === 0) return '今天'
     if (diffDays === 1) return '昨天'
     if (diffDays < 7) return diffDays + ' 天前'
-    return date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+    return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' })
   }
 
   const getGroupColor = (group: string) => {

@@ -795,7 +795,11 @@ export default function WorkoutLiveClient({
                           <Check className="h-4 w-4" />
                         )}
                       </button>
-                      <button onClick={() => setEditingTemplateId(null)} className="p-1.5 text-[var(--text-tertiary)] cursor-pointer">
+                      <button
+                        onClick={() => { setEditingTemplateId(null) }}
+                        aria-label="取消重命名"
+                        className="p-1.5 text-[var(--text-disabled)] hover:text-white cursor-pointer"
+                      >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
