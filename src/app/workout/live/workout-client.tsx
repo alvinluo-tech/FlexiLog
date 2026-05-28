@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
+import { getDemoImage } from '@/lib/exercise-images'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { 
@@ -991,12 +992,18 @@ export default function WorkoutLiveClient({
 
         {/* Exercise List */}
         <div className="space-y-3">
-          {exerciseBlocks.map((block, blockIndex) => (
+          {exerciseBlocks.map((block, blockIndex) => {
+            const thumbImg = getDemoImage(block.exercise.name)
+            return (
             <div key={blockIndex} className="bg-[var(--surface-2)] rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center">
-                    <Barbell className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  <div className="h-8 w-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center overflow-hidden shrink-0">
+                    {thumbImg ? (
+                      <img src={thumbImg} alt={block.exercise.name} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <Barbell className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{block.exercise.name}</p>
@@ -1025,7 +1032,8 @@ export default function WorkoutLiveClient({
                 </span>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Add More Exercises */}
@@ -1163,18 +1171,27 @@ export default function WorkoutLiveClient({
 
       {/* ── Exercise Blocks ── */}
       <div className="px-4 pt-3 space-y-3">
-        {exerciseBlocks.map((block, blockIndex) => (
-          <div 
-            key={blockIndex} 
+        {exerciseBlocks.map((block, blockIndex) => {
+          const thumbImg = getDemoImage(block.exercise.name)
+          return (
+          <div
+            key={blockIndex}
             className="bg-[var(--surface-1)] border border-[var(--border-default)] rounded-xl overflow-hidden"
           >
             {/* Exercise Header */}
             <div className="flex items-center justify-between px-3.5 pt-3.5 pb-2">
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-bold text-[var(--accent)] truncate">{block.exercise.name}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-disabled)] mt-0.5">
-                  {block.exercise.muscle_group}
-                </p>
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                {thumbImg && (
+                  <div className="h-9 w-9 rounded-lg overflow-hidden bg-[var(--surface-2)] shrink-0">
+                    <img src={thumbImg} alt={block.exercise.name} className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[15px] font-bold text-[var(--accent)] truncate">{block.exercise.name}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-disabled)] mt-0.5">
+                    {block.exercise.muscle_group}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 {/* Rest Timer Adjustment */}
@@ -1317,7 +1334,8 @@ export default function WorkoutLiveClient({
               </button>
             </div>
           </div>
-        ))}
+          )
+        })}
 
         {/* Add Exercise Button */}
         <button
@@ -1361,16 +1379,26 @@ export default function WorkoutLiveClient({
                   {group}
                 </p>
                 <div className="space-y-1">
-                  {exs.map(exercise => (
+                  {exs.map(exercise => {
+                    const thumbImg = getDemoImage(exercise.name)
+                    return (
                     <button
                       key={exercise.id}
                       onClick={() => addExercise(exercise)}
-                      className="w-full text-left px-3 py-2.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] active:scale-[0.98] transition-all flex items-center justify-between"
+                      className="w-full text-left px-3 py-2.5 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] active:scale-[0.98] transition-all flex items-center justify-between gap-2"
                     >
-                      <span className="text-sm font-medium text-white">{exercise.name}</span>
-                      <Plus className="h-4 w-4 text-[var(--accent)]" />
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {thumbImg && (
+                          <div className="h-7 w-7 rounded-md overflow-hidden bg-[var(--surface-3)] shrink-0">
+                            <img src={thumbImg} alt={exercise.name} className="w-full h-full object-cover" loading="lazy" />
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-white truncate">{exercise.name}</span>
+                      </div>
+                      <Plus className="h-4 w-4 text-[var(--accent)] shrink-0" />
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}

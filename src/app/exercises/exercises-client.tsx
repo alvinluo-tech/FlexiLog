@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { getDemoImage } from '@/lib/exercise-images'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { 
@@ -25,6 +26,7 @@ interface Exercise {
   rest_seconds?: number | null
   is_custom: boolean
   equipment?: string | null
+  image_url?: string | null
 }
 
 const muscleGroups = [
@@ -259,15 +261,6 @@ function getExerciseMeta(ex: Exercise) {
     'text-rose-400 bg-rose-500/10 border-rose-500/20'
 
   return { equipment, difficulty, secondary, difficultyColor }
-}
-
-// Map exercise names to custom AI action demonstration images
-const getDemoImage = (name: string) => {
-  const n = name.toLowerCase()
-  if (n.includes('bench press')) return '/images/exercises/bench_press.png'
-  if (n.includes('squat') && !n.includes('split squat')) return '/images/exercises/squat.png'
-  if (n.includes('deadlift') && !n.includes('romanian')) return '/images/exercises/deadlift.png'
-  return null
 }
 
 // Equipment type detection from exercise name (Chinese)
@@ -549,7 +542,7 @@ export default function ExercisesClient({ exercises, usageCounts = {} }: { exerc
               </button>
               <DialogHeader className="p-0 border-b border-white/5 relative overflow-hidden rounded-t-2xl">
                 {(() => {
-                  const demoImg = getDemoImage(selectedExercise.name)
+                  const demoImg = selectedExercise.image_url || getDemoImage(selectedExercise.name)
                   if (demoImg) {
                     return (
                       <div className="relative w-full h-44 overflow-hidden bg-[var(--surface-0)] flex items-center justify-center border-b border-white/5">
@@ -813,6 +806,7 @@ function ExerciseList({ exercises, onSelect, usageCounts }: { exercises: Exercis
             {groupEx.map((exercise) => {
               const count = usageCounts[exercise.id] || 0
               const colors = muscleGroupColors[exercise.muscle_group] || muscleGroupColors.all
+              const demoImg = exercise.image_url || getDemoImage(exercise.name)
 
               return (
                 <Card
@@ -821,8 +815,12 @@ function ExerciseList({ exercises, onSelect, usageCounts }: { exercises: Exercis
                   className="bg-[var(--surface-1)] border border-white/5 rounded-xl cursor-pointer active:scale-[0.97] transition-all hover:border-white/10 overflow-hidden"
                 >
                   {/* Image area */}
-                  <div className={cn("relative h-24 flex items-center justify-center", colors.bg)}>
-                    <MuscleGroupGraphic group={exercise.muscle_group} size="sm" />
+                  <div className={cn("relative h-24 flex items-center justify-center overflow-hidden", demoImg ? 'bg-[var(--surface-0)]' : colors.bg)}>
+                    {demoImg ? (
+                      <img src={demoImg} alt={exercise.name} className="w-full h-full object-cover opacity-90" loading="lazy" />
+                    ) : (
+                      <MuscleGroupGraphic group={exercise.muscle_group} size="sm" />
+                    )}
 
                     {/* Practice count badge - top right */}
                     {count > 0 && (
