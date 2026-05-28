@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Barbell, Clock, TrendUp, CaretDown, CaretUp, ChartLineUp, DownloadSimple, Funnel } from '@phosphor-icons/react'
-import WeightChart from '@/components/charts/weight-chart'
-import VolumeChart from '@/components/charts/volume-chart'
+import dynamic from 'next/dynamic'
+
+const WeightChart = dynamic(() => import('@/components/charts/weight-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
+const VolumeChart = dynamic(() => import('@/components/charts/volume-chart'), { ssr: false, loading: () => <div className="h-48 bg-[var(--surface-2)] rounded-xl animate-pulse" /> })
 import { getHistoryPage } from '@/app/actions/history'
 import { exportWorkoutData } from '@/app/actions/export'
 import { toast } from 'sonner'
