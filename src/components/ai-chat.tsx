@@ -140,7 +140,7 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
     }
   };
 
-  const handleSend = async (customMessage?: string) => {
+  const handleSend = useCallback(async (customMessage?: string) => {
     const userMessage = (customMessage || input).trim();
     if (!userMessage || loading) return;
 
@@ -239,14 +239,14 @@ export default function AIChat({ onPlanGenerated, showSidebar, onToggleSidebar }
       setLoading(false);
       abortControllerRef.current = null;
     }
-  };
+  }, [input, loading, currentConvId, onPlanGenerated]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }, [handleSend]);
 
   return (
     <div className="flex flex-1 min-h-0 bg-[var(--surface-0)] overflow-hidden relative w-full h-full">

@@ -9,7 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Sparkle, CalendarBlank, Barbell, Clock, Target, CircleNotch, Lightning, ChatCircle, List } from '@phosphor-icons/react'
 import { savePlanAsTemplate } from '@/app/actions/templates'
 import { toast } from 'sonner'
-import AIChat from '@/components/ai-chat'
+import dynamic from 'next/dynamic'
+
+const AIChat = dynamic(() => import('@/components/ai-chat'), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-[var(--surface-2)] rounded-xl animate-pulse" />,
+})
 import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
 

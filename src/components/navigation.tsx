@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -16,7 +17,7 @@ const navItems = [
   { href: '/profile', label: '我的', icon: User },
 ]
 
-export function Sidebar({ userName }: { userName?: string }) {
+export const Sidebar = React.memo(function Sidebar({ userName }: { userName?: string }) {
   const pathname = usePathname()
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col border-r border-[var(--border-default)] bg-[var(--surface-1)]">
@@ -58,15 +59,15 @@ export function Sidebar({ userName }: { userName?: string }) {
       </div>
     </aside>
   )
-}
+})
 
-export function BottomNav() {
+export const BottomNav = React.memo(function BottomNav() {
   const pathname = usePathname()
   // Show only 5 items on mobile
-  const mobileItems = navItems.filter(item => 
+  const mobileItems = navItems.filter(item =>
     ['/dashboard', '/exercises', '/workout/live', '/ai-coach', '/profile'].includes(item.href)
   )
-  
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass-nav md:hidden safe-bottom">
       <div className="flex justify-around items-center h-[72px] px-2">
@@ -87,4 +88,4 @@ export function BottomNav() {
       </div>
     </nav>
   )
-}
+})
