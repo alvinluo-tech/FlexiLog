@@ -46,6 +46,22 @@ export async function getConversations() {
 
 export async function getMessages(conversationId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { data: [] }
+  }
+
+  // Verify conversation belongs to user
+  const { data: conversation } = await supabase
+    .from('ai_conversations')
+    .select('user_id')
+    .eq('id', conversationId)
+    .single()
+
+  if (!conversation || conversation.user_id !== user.id) {
+    return { data: [] }
+  }
 
   const { data } = await supabase
     .from('ai_messages')
@@ -56,8 +72,24 @@ export async function getMessages(conversationId: string) {
   return { data: data || [] }
 }
 
-export async function addMessage(conversationId: string, role: string, content: string, metadata?: any) {
+export async function addMessage(conversationId: string, role: string, content: string, metadata?: Record<string, unknown>) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Not authenticated' }
+  }
+
+  // Verify conversation belongs to user
+  const { data: conversation } = await supabase
+    .from('ai_conversations')
+    .select('user_id')
+    .eq('id', conversationId)
+    .single()
+
+  if (!conversation || conversation.user_id !== user.id) {
+    return { error: 'Conversation not found' }
+  }
 
   const { data, error } = await supabase
     .from('ai_messages')

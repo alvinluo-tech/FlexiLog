@@ -8,6 +8,14 @@ export async function shareWorkout(sessionId: string, title: string, description
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  // Input validation
+  if (!title || title.length > 200) {
+    return { error: '标题不能为空且不能超过 200 字符' }
+  }
+  if (description && description.length > 2000) {
+    return { error: '描述不能超过 2000 字符' }
+  }
+
   // Get session data
   const { data: session } = await supabase
     .from('workout_sessions')
@@ -79,6 +87,14 @@ export async function addComment(sharedWorkoutId: string, content: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
+
+    // Input validation
+    if (!content || content.trim().length === 0) {
+      return { error: '评论内容不能为空' }
+    }
+    if (content.length > 500) {
+      return { error: '评论内容不能超过 500 字符' }
+    }
 
     const { data, error } = await supabase
       .from('workout_comments')

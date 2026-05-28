@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateWorkoutPlan, analyzeWorkoutHistory } from '@/lib/ai'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +10,11 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: '未登录' }, { status: 401 })
+    }
+
+    // Rate limiting
+    if (!rateLimit(user.id, 20, 60000)) {
+      return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 })
     }
 
     const body = await request.json()
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
     console.error('Error message:', error.message)
     console.error('Error stack:', error.stack)
     return NextResponse.json(
-      { error: error.message || 'AI 服务暂时不可用' },
+      { error: 'AI 服务暂时不可用' },
       { status: 500 }
     )
   }

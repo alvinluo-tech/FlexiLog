@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rate-limit'
+import { AI_MODEL_NAME } from '@/lib/constants'
+import { calculateSessionVolume } from '@/lib/volume-utils'
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+    // Rate limiting
+    if (!rateLimit(user.id, 20, 60000)) {
+      return NextResponse.json({ error: '请求过于频繁，请稍后再试' }, { status: 429 })
+    }
 
     const body = await request.json()
     const { type, params } = body
@@ -58,7 +66,7 @@ export async function POST(request: NextRequest) {
 最近训练记录:
 ${JSON.stringify(recentSessions?.slice(0, 3).map(s => ({
   date: s.started_at?.split('T')[0],
-  exercises: [...new Set((s.workout_sets || []).map((set: any) => set.exercises?.name).filter(Boolean))]
+  exercises: [...new Set((s.workout_sets || []).map((set: Record<string, any>) => set.exercises?.name).filter(Boolean))]
 })), null, 2)}
 
 请推荐3-5个适合的动作，考虑用户的训练历史避免重复。`
@@ -81,10 +89,10 @@ ${JSON.stringify(recentSessions?.slice(0, 3).map(s => ({
 
       const workoutSummary = recentSessions?.map(s => {
         const sets = s.workout_sets || []
-        const volume = sets.reduce((sum: number, set: any) => sum + (Number(set.weight_kg) || 0) * (set.reps || 0), 0)
+        const volume = calculateSessionVolume(sets)
         return {
           date: s.started_at?.split('T')[0],
-          exercises: [...new Set(sets.map((set: any) => set.exercises?.name).filter(Boolean))],
+          exercises: [...new Set(sets.map((set: Record<string, any>) => set.exercises?.name).filter(Boolean))],
           volume,
           setCount: sets.length,
         }
@@ -112,7 +120,7 @@ ${JSON.stringify(workoutSummary, null, 2)}
       },
       signal: AbortSignal.timeout(30000),
       body: JSON.stringify({
-        model: 'mimo-v2.5-pro',
+        model: AI_MODEL_NAME,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -137,12 +145,12 @@ ${JSON.stringify(workoutSummary, null, 2)}
     let result = null
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
-      try { result = JSON.parse(jsonMatch[0]) } catch {}
+      try { result = JSON.parse(jsonMatch[0]) } catch (e) { console.error('Failed to parse AI response JSON:', e) }
     }
 
     return NextResponse.json({ result, raw: content })
   } catch (error: any) {
     console.error('AI Extended error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'AI 服务暂时不可用' }, { status: 500 })
   }
 }

@@ -4,6 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+function validateRedirectPath(path?: string): string {
+  if (!path || !path.startsWith('/') || path.startsWith('//') || path.includes('://')) {
+    return '/dashboard'
+  }
+  return path
+}
+
 export async function signIn(formData: FormData, redirectTo?: string) {
   const supabase = await createClient()
 
@@ -20,7 +27,7 @@ export async function signIn(formData: FormData, redirectTo?: string) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(redirectTo || '/dashboard')
+  redirect(validateRedirectPath(redirectTo))
 }
 
 export async function signUp(formData: FormData) {
@@ -98,17 +105,9 @@ export async function getUser() {
 
 export async function ensureUserProfile(userId: string) {
   const supabase = await createClient()
-  
-  // Check if profile exists
-  const { data: existing } = await supabase
+  const { error } = await supabase
     .from('user_profiles')
-    .select('id')
-    .eq('id', userId)
-    .single()
-  
-  if (!existing) {
-    // Create profile if it doesn't exist
-    const { error } = await supabase.from('user_profiles').insert({
+    .upsert({
       id: userId,
       gender: null,
       age: null,
@@ -121,10 +120,9 @@ export async function ensureUserProfile(userId: string) {
       training_days_per_week: null,
       session_duration_minutes: null,
       equipment: null,
-    })
-    
-    if (error) {
-      console.error('ensureUserProfile error:', error)
-    }
+    }, { onConflict: 'id', ignoreDuplicates: true })
+
+  if (error) {
+    console.error('ensureUserProfile error:', error)
   }
 }

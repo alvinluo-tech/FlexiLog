@@ -1,12 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+function validateRedirectPath(path: string): string {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('://')) {
+    return '/dashboard'
+  }
+  return path
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as 'signup' | 'recovery' | 'invite' | null
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = validateRedirectPath(searchParams.get('next') ?? '/dashboard')
 
   const supabase = await createClient()
 

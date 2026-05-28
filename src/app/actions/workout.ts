@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // Workout Sessions
 export async function createWorkoutSession(templateId?: string) {
@@ -70,11 +69,7 @@ export async function discardWorkoutSession(sessionId: string) {
     return { error: '未登录' }
   }
 
-  // Use service role key to bypass RLS for delete operations
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const supabase = serviceRoleKey
-    ? createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
-    : authClient
+  const supabase = authClient
 
   // Delete ALL active (un-ended) sessions for this user, not just the current one.
   // This cleans up any stale sessions from previous runs that were never properly ended.
